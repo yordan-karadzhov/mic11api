@@ -52,16 +52,13 @@ protected:
   double time_spent_;
 };
 
-///////////////////// InProcessor /////////////////////////////////////
+///////////////////// PInput /////////////////////////////////////
 
 template <class objOut>
-class InProcessor : public BaseProcessor {
-
+class PInput {
 public:
-  InProcessor() = delete;  // Never use this default constructor!!!
-  InProcessor(std::string n) : BaseProcessor(n), output_(nullptr) {}
-
-  virtual ~InProcessor() {};
+  PInput() : output_(nullptr) {}
+  virtual ~PInput() {}
 
   virtual void setOutputObj(objOut **o) {output_ = o;}
 
@@ -72,16 +69,13 @@ protected:
   objOut **output_;
 };
 
-///////////////////// OutProcessor /////////////////////////////////////
+///////////////////// POutput /////////////////////////////////////
 
 template <class objIn>
-class OutProcessor : public BaseProcessor {
-
+class POutput {
 public:
-  OutProcessor() = delete;  // Never use this default constructor!!!
-  OutProcessor(std::string n) : BaseProcessor(n), input_(nullptr) {}
-
-  virtual ~OutProcessor() {};
+  POutput() : input_(nullptr) {}
+  virtual ~POutput() {}
 
   virtual void setInputObj(objIn  **i) {input_ = i;}
 
@@ -92,29 +86,40 @@ protected:
   objIn  **input_;
 };
 
+///////////////////// InProcessor /////////////////////////////////////
+
+template <class objOut>
+class InProcessor : public BaseProcessor, public PInput<objOut> {
+
+public:
+  InProcessor() = delete;  // Never use this default constructor!!!
+  InProcessor(std::string n) : BaseProcessor(n), PInput<objOut>() {}
+
+  virtual ~InProcessor() {};
+};
+
+///////////////////// OutProcessor /////////////////////////////////////
+
+template <class objIn>
+class OutProcessor : public BaseProcessor, public POutput<objIn> {
+
+public:
+  OutProcessor() = delete;  // Never use this default constructor!!!
+  OutProcessor(std::string n) : BaseProcessor(n), POutput<objIn>() {}
+
+  virtual ~OutProcessor() {};
+};
+
 ///////////////////// InOutProcessor /////////////////////////////////////
 
 template <class objIn, class objOut>
-class InOutProcessor : public BaseProcessor {
+class InOutProcessor : public BaseProcessor, public PInput<objOut>, public POutput<objIn> {
 
 public:
   InOutProcessor() = delete;  // Never use this default constructor!!!
-  InOutProcessor(std::string n) : BaseProcessor(n), input_(nullptr), output_(nullptr) {}
+  InOutProcessor(std::string n) : BaseProcessor(n), PInput<objOut>(), POutput<objIn>() {}
 
   virtual ~InOutProcessor() {};
-
-  virtual void setInputObj(objIn   **i) {input_ = i;}
-  virtual void setOutputObj(objOut **o) {output_ = o;}
-
-  objIn**  getInputObj()  const {return input_;}
-  objIn*   getInputPtr()  const {return *input_;}
-
-  objOut** getOutputObj() const {return output_;}
-  objOut*  getOutputPtr() const {return *output_;}
-
-protected:
-  objIn  **input_;
-  objOut **output_;
 };
 
 #endif

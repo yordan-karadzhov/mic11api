@@ -20,16 +20,19 @@
 template <class outDataType>
 WOutput<outDataType>::WOutput()
 : output_(new outDataType*), fifo_out_(new Fifo<outDataType*> (FIFO_MAX_SIZE)) {
+  *output_ = nullptr;
   fifo_out_->addProducer();
 }
 
 template <class outDataType>
 WOutput<outDataType>::~WOutput() {
-  if (*output_) {
-    delete *output_;
-    *output_ = nullptr;
+  if (output_) {
+    if (*output_) {
+      delete *output_;
+      *output_ = nullptr;
+    }
+    delete output_;
   }
-  delete output_;
 }
 
 template <class outDataType>
@@ -48,16 +51,19 @@ void WOutput<outDataType>::push() {
 template <class inDataType>
 WInput<inDataType>::WInput()
 : input_(new inDataType*), fifo_in_(new Fifo<inDataType*> (FIFO_MAX_SIZE)) {
+  *input_ = nullptr;
   fifo_in_->addConsummer();
 }
 
 template <class inDataType>
 WInput<inDataType>::~WInput() {
-  if (*input_) {
-    delete *input_;
-    *input_ = nullptr;
+  if (input_) {
+    if (*input_) {
+      delete *input_;
+      *input_ = nullptr;
+    }
+    delete input_;
   }
-  delete input_;
 }
 
 template <class inDataType>
@@ -177,6 +183,7 @@ void TransformWorker<inDataType, outDataType>::start(int n) {
     if( !this->process() )
       this->stopWork();
 
+    delete *(WInput<inDataType>::input_);
     this->push();
     ++i;
   }

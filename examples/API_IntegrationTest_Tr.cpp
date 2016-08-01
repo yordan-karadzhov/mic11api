@@ -124,7 +124,6 @@ int main(int argc, char* argv[]) {
   t_proc_worker   w1(1), w2(2);
   t_output_worker w3(3);
 
-
   /**Position the 4 workers.
   *
   *       |--> w1 -->|
@@ -145,8 +144,7 @@ int main(int argc, char* argv[]) {
   w1 << w3.getInput();
   w2 << w3.getInput();
 // //   w1 << ( w2 << w3.getInput() );
-// 
-// 
+
 //   // Start the work. 1000 iterations.
   vector<thread> threads;
   threads.push_back( thread( JOB_STAR_N(w0, 100) ));

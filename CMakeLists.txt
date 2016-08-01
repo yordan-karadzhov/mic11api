@@ -11,6 +11,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread -Wall -O3")
 set(LIBRARY_OUTPUT_PATH    "${CMAKE_SOURCE_DIR}/lib")
 set(EXECUTABLE_OUTPUT_PATH "${CMAKE_SOURCE_DIR}/bin")
 
+include_directories(  ${CMAKE_SOURCE_DIR}/.)
 include_directories(  ${CMAKE_SOURCE_DIR}/src)
 link_directories(     ${MIC11_DIR}/lib)
 
@@ -21,8 +22,8 @@ message(STATUS "Linker flags : " ${CMAKE_EXE_LINKER_FLAGS}\n)
 add_subdirectory(${CMAKE_SOURCE_DIR}/src)
 add_subdirectory(${CMAKE_SOURCE_DIR}/examples)
 
-# if    (CPPUNIT_FOUND)
-#   add_subdirectory(${CMAKE_SOURCE_DIR}/tests)
-# endif (CPPUNIT_FOUND)
+if    (CPPUNIT_FOUND)
+  add_subdirectory(${CMAKE_SOURCE_DIR}/tests)
+endif (CPPUNIT_FOUND)
 
 

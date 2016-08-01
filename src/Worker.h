@@ -47,6 +47,7 @@ public:
 
   std::string  getName() const {return name_;}
   int          getId()   const {return id_;}
+  int getCount()         const {return processor_->getCount();}
   void         printTimeStats() const;
 
 protected:
@@ -80,7 +81,7 @@ protected:
 ///////////////////// WInput /////////////////////////////////////
 
 template <class inDataType>
-class WInput /*: public WCore */{
+class WInput {
 public:
   WInput();
   virtual ~WInput();
@@ -149,7 +150,9 @@ class UpdateWorker
     p->setOutputObj( WOutput<dataType>::output_ );
   }
 
-  virtual ~UpdateWorker() {}
+  virtual ~UpdateWorker() {
+    WOutput<dataType>::output_ = nullptr;
+  }
 
   void start(int n=0) final;
 
