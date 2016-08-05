@@ -11,8 +11,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MAUS.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * along with MAUS.  If not, see <http://www.gnu.org/licenses/>
  */
 
 // C++
@@ -24,7 +23,7 @@
 BaseProcessor::BaseProcessor(std::string n)
 : name_(n), processCount_(0), time_spent_(0.) {}
 
-bool BaseProcessor::process_() {
+bool BaseProcessor::process_with_stats() {
   hd_time t0 = GET_TIME;
 
   bool status = this->process();

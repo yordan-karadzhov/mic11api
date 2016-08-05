@@ -11,12 +11,10 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MAUS.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * along with MAUS.  If not, see <http://www.gnu.org/licenses/>
  */
 
 ///////////////////// WOutput /////////////////////////////////
-
 template <class outDataType>
 WOutput<outDataType>::WOutput()
 : output_(new outDataType*), fifo_out_(new Fifo<outDataType*> (FIFO_MAX_SIZE)) {
@@ -47,7 +45,6 @@ void WOutput<outDataType>::push() {
 }
 
 ///////////////////// WInput /////////////////////////////////////
-
 template <class inDataType>
 WInput<inDataType>::WInput()
 : input_(new inDataType*), fifo_in_(new Fifo<inDataType*> (FIFO_MAX_SIZE)) {
@@ -82,12 +79,11 @@ bool WInput<inDataType>::pull() {
   return false;
 }
 
-
 ///////////////////// InputWorker /////////////////////////
-
 template <class outDataType>
 void InputWorker<outDataType>::start(int n) {
 
+  this->init();
   int i=0;
   while(i<n || n==0) {
     *(WOutput<outDataType>::output_) = new outDataType;
@@ -107,12 +103,11 @@ void InputWorker<outDataType>::stopWork() {
   this->close();
 }
 
-
 ///////////////////// OutputWorker /////////////////////////
-
 template <class inDataType>
 void OutputWorker<inDataType>::start(int n) {
 
+  this->init();
   int i=0;
   while(i<n || n==0) {
     if( !this->pull()) {
@@ -139,10 +134,10 @@ void OutputWorker<inDataType>::stopWork() {
 }
 
 /////////////////// UpdateWorker /////////////////////////////////////
-
 template <class dataType>
 void UpdateWorker<dataType>::start(int n) {
 
+  this->init();
   int i=0;
   while(i<n || n==0) {
     if( !this->pull()) {
@@ -168,10 +163,10 @@ void UpdateWorker<dataType>::stopWork() {
 }
 
 /////////////////// TransformWorker /////////////////////////////////////
-
 template <class inDataType, class outDataType>
 void TransformWorker<inDataType, outDataType>::start(int n) {
 
+  this->init();
   int i=0;
   while(i<n || n==0) {
     if( !this->pull()) {

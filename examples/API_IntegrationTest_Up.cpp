@@ -32,9 +32,9 @@ using namespace std::chrono;
 /** Define 3 dummy processors.
  *  The following interface must be implemented:
  *
- *   void init(string s)
- *   bool process()
- *   void close()
+ *   void init(string s) override;
+ *   bool process() override;
+ *   void close() override;
  */
 
 
@@ -45,15 +45,17 @@ class t_input : public InProcessor<int> {
  public:
   t_input(): InProcessor("t_input") {}
 
-  void init(string s) {}
-  bool process();
-  void close() {}
+  void init(string s) override {}
+  bool process() override;
+  void close() override {}
 };
+
+std::atomic_uint i_count(10);
 
 bool t_input::process() {
 
   /// Simulate some work here.
-  **output_ = processCount_ + 220;
+  **output_ = ++i_count + 220;
   std::this_thread::sleep_for( milliseconds(5) );
 
   return true;
@@ -67,9 +69,9 @@ class t_proc : public InProcessor<int> {
  public:
   t_proc() : InProcessor("t_proc") {}
 
-  void init(string s) {}
-  bool process();
-  void close() {}
+  void init(string s) override {}
+  bool process() override;
+  void close() override {}
 };
 
 bool t_proc::process() {
@@ -90,9 +92,9 @@ class t_out : public OutProcessor<int> {
  public:
   t_out() : OutProcessor("t_out") {}
 
-  void init(string s) {}
-  bool process();
-  void close() {}
+  void init(string s) override {}
+  bool process() override;
+  void close() override {}
 };
 
 bool t_out::process() {
@@ -134,24 +136,23 @@ int main(int argc, char* argv[]) {
   */
 
   /** w1 and w2 are consumers of the output of w0.
-   *  In this case the data buffer is owned by w0.
+   *  In this case the data buffer is originally owned by w0.
    */
   w0.getOutput() >> w1 >> w2;
 
   /** w3 is a consumer of the outputs of w1 and w2.
-   *  In this case the data buffer is owned by w3.
+   *  In this case the data buffer is originally owned by w3.
    */
   w1 << w3.getInput();
   w2 << w3.getInput();
 //   w1 << ( w2 << w3.getInput() );
 
-
-  /// Start the work. 1000 iterations.
   vector<thread> threads;
-  threads.push_back( thread( JOB_STAR_N(w0, 100) ));
-  threads.push_back( thread( JOB_STAR(w1) ));
-  threads.push_back( thread( JOB_STAR(w2) ));
-  threads.push_back( thread( JOB_STAR(w3) ));
+  threads.push_back( thread(std::ref(w0), 100) ); // Start the work. 100 iterations.
+//   threads.push_back( thread(std::ref(w0)) ); // Start the work. Run forever.
+  threads.push_back( thread(std::ref(w1)) );
+  threads.push_back( thread(std::ref(w2)) );
+  threads.push_back( thread(std::ref(w3)) );
 
   for (auto &t:threads)
     t.join();

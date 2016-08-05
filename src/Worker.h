@@ -11,8 +11,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MAUS.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * along with MAUS.  If not, see <http://www.gnu.org/licenses/>
  */
 
 #ifndef BASETOOLS_WORKER_H
@@ -29,37 +28,48 @@
 
 #define FIFO_MAX_SIZE 10
 
+struct WStats {
+  std::string worker_name_, processor_name_;
+  int id_;
+  int processCount_;
+  double time_spent_;
+};
 
 ///////////////////// WInterface ////////////////////////////////////
-
 class WInterface {
 public:
-  WInterface() = delete;  // Never use this default constructor!!!
   WInterface(std::string n, BaseProcessor *p, int id=0);
-
   virtual ~WInterface() {delete processor_;}
 
-  void init(std::string s="");
+  WInterface(const WInterface&)  = delete;  // disable copying
+  WInterface( WInterface&&) = delete;  // disable moving
+
+  WInterface& operator=(const WInterface&)  = delete; // disable assignment
+  WInterface& operator=(WInterface&&) = delete;
+
   virtual void start(int n=0) =0;
+  void operator () (int n=0) {this->start(n);}
 
-  void close();
+  void init(std::string s="");
   bool process();
+  void close();
 
-  std::string  getName() const {return name_;}
-  int          getId()   const {return id_;}
-  int getCount()         const {return processor_->getCount();}
-  void         printTimeStats() const;
+  std::string  getName()  const  {return name_;}
+  int          getId()    const  {return id_;}
+  int          getCount() const  {return processor_->getCount();}
+  void         enableTimeStats() {time_stats_enable_ = true;}
+  WStats       getStats() const;
 
-protected:
+// protected:
   BaseProcessor *processor_;
 
-private:
   std::string name_;
   int id_;
+  bool time_stats_enable_;
+
 };
 
 ///////////////////// WOutput /////////////////////////////////////
-
 template <class outDataType>
 class WOutput {
 public:
@@ -78,8 +88,7 @@ protected:
   std::shared_ptr< Fifo<outDataType*> > fifo_out_;
 };
 
-///////////////////// WInput /////////////////////////////////////
-
+///////////////////// WInput ///////////////////////////////////////
 template <class inDataType>
 class WInput {
 public:
@@ -98,8 +107,7 @@ protected:
   std::shared_ptr< Fifo<inDataType*> > fifo_in_;
 };
 
-///////////////////// InputWorker /////////////////////////
-
+///////////////////// InputWorker //////////////////////////////////
 template <class outDataType>
 class InputWorker
 : public WInterface, public WOutput<outDataType> {
@@ -111,14 +119,13 @@ public:
   }
   virtual ~InputWorker() {}
 
-  void start(int n=0) final;
+  virtual void start(int n=0) final;
 
 private:
   void stopWork();
 };
 
-///////////////////// OutputWorker /////////////////////////
-
+///////////////////// OutputWorker /////////////////////////////////
 template <class inDataType>
 class OutputWorker
 : public WInterface, public WInput<inDataType> {
@@ -130,14 +137,13 @@ public:
   }
   virtual ~OutputWorker() {}
 
-  void start(int n=0) final;
+  virtual void start(int n=0) final;
 
 private:
   void stopWork();
 };
 
 ///////////////// UpdateWorker /////////////////////////////////////
-
 template <class dataType>
 class UpdateWorker
 : public WInterface, public WInput<dataType>, public WOutput<dataType> {
@@ -154,14 +160,13 @@ class UpdateWorker
     WOutput<dataType>::output_ = nullptr;
   }
 
-  void start(int n=0) final;
+  virtual void start(int n=0) final;
 
 private:
   void stopWork();
 };
 
-///////////////// TransformWorker /////////////////////////////////////
-
+///////////////// TransformWorker //////////////////////////////////
 template <class inDataType, class outDataType>
 class TransformWorker
 : public WInterface, public WInput<inDataType>, public WOutput<outDataType> {
@@ -175,10 +180,11 @@ class TransformWorker
 
   virtual ~TransformWorker() {}
 
-  void start(int n=0) final;
+  virtual void start(int n=0) final;
 
 private:
   void stopWork();
+
 };
 
 #include "Worker-inl.h"

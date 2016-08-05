@@ -26,12 +26,15 @@ bool tproc_int1::process() {
 using namespace std;
 
 void TestNWorker::setUp(void) {
+  mTestObj_1.enableTimeStats();
+  mTestObj_2.enableTimeStats();
+  mTestObj_3.enableTimeStats();
 }
 
 void TestNWorker::tearDown(void) {}
 
 void TestNWorker::Test1Worker(void) {
-  cout << endl;
+
   auto fifo_ptr = mTestObj_1.getInput();
   fifo_ptr->setMaxSize(11);
   for (int i=0;i<10;++i)
@@ -50,7 +53,7 @@ void TestNWorker::Test1Worker(void) {
 
 #define NPROC 16
 void TestNWorker::Test2WorkersSameData(void) {
-  cout << endl;
+
   mTestObj_1.getInput()->setMaxSize(NPROC+1);
   mTestObj_1.getOutput()->setMaxSize(NPROC+1);
 
@@ -92,6 +95,7 @@ void TestNWorker::Test2WorkersSameData(void) {
 }
 
 void TestNWorker::Test2WorkersDiffData(void) {
+
   mTestObj_1.getInput()->setMaxSize(NPROC+1);
   mTestObj_3.getInput()->setMaxSize(NPROC+1);
   mTestObj_1.getOutput()->setMaxSize(NPROC+1);

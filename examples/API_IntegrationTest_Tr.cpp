@@ -32,9 +32,9 @@ using namespace std::chrono;
 /** Define 3 dummy processors.
  *  The following interface must be implemented:
  *
- *   void init(string s)
- *   bool process()
- *   void close()
+ *   void init(string s) override;
+ *   bool process() override;
+ *   void close() override;
  */
 
 
@@ -45,15 +45,16 @@ class t_input : public InProcessor<int> {
  public:
   t_input(): InProcessor("t_input") {}
 
-  void init(string s) {}
-  bool process();
-  void close() {}
+  void init(string s) override {}
+  bool process() override;
+  void close() override {}
 };
 
+int init_v(0);
 bool t_input::process() {
 
   /// Simulate some work here.
-  **output_ = processCount_ + 220;
+  **output_ = ++init_v + 220;
   std::this_thread::sleep_for( milliseconds(5) );
 
   return true;
@@ -67,9 +68,9 @@ class t_proc : public InOutProcessor<int, std::string> {
  public:
   t_proc() : InOutProcessor("t_proc") {}
 
-  void init(string s) {}
-  bool process();
-  void close() {}
+  void init(string s) override {}
+  bool process() override;
+  void close() override {}
 };
 
 bool t_proc::process() {
@@ -91,9 +92,9 @@ class t_out : public OutProcessor<std::string> {
  public:
   t_out() : OutProcessor("t_out") {}
 
-  void init(string s) {}
-  bool process();
-  void close() {}
+  void init(string s) override {}
+  bool process() override;
+  void close() override {}
 };
 
 bool t_out::process() {
@@ -143,14 +144,14 @@ int main(int argc, char* argv[]) {
 //    */
   w1 << w3.getInput();
   w2 << w3.getInput();
-// //   w1 << ( w2 << w3.getInput() );
+//   w1 << ( w2 << w3.getInput() );
 
-//   // Start the work. 1000 iterations.
   vector<thread> threads;
-  threads.push_back( thread( JOB_STAR_N(w0, 100) ));
-  threads.push_back( thread( JOB_STAR(w1) ));
-  threads.push_back( thread( JOB_STAR(w2) ));
-  threads.push_back( thread( JOB_STAR(w3) ));
+  threads.push_back( thread(std::ref(w0), 100) ); // Start the work. 100 iterations.
+//   threads.push_back( thread(std::ref(w0)) ); // Start the work. Run forever.
+  threads.push_back( thread(std::ref(w1)) );
+  threads.push_back( thread(std::ref(w2)) );
+  threads.push_back( thread(std::ref(w3)) );
 
   for (auto &t:threads)
     t.join();

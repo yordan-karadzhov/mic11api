@@ -11,8 +11,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MAUS.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * along with MAUS.  If not, see <http://www.gnu.org/licenses/>
  */
 
 // Mic11
@@ -21,30 +20,38 @@
 std::mutex mtx;
 
 WInterface::WInterface(std::string n, BaseProcessor *p, int id)
-: processor_(p), name_(n), id_(id) {}
+: processor_(p), name_(n), id_(id), time_stats_enable_(false) {}
 
 void WInterface::init(std::string s) {
-  if (processor_)
+  if (processor_) {
+    std::lock_guard<std::mutex> lock(mtx);
     processor_->init(s);
+  }
 }
 
 bool WInterface::process() {
-  return processor_->process_();
+  if (time_stats_enable_)
+    return processor_->process_with_stats();
+
+  return processor_->process();
 }
 
 void WInterface::close() {
-  std::unique_lock<std::mutex> lck (mtx, std::defer_lock);
-  lck.lock();
-  std::cout << this->getName() << " ("
-            << id_ << ") : job done." << std::endl;
   if (processor_) {
+    std::lock_guard<std::mutex> lock(mtx);
     processor_->close();
-    processor_->printTimeStats();
   }
-  std::cout << std::endl;
-  lck.unlock();
 }
 
+WStats WInterface::getStats() const {
+  WStats s;
+  s.worker_name_    = this->name_;
+  s.processor_name_ = processor_->getName();
+  s.id_             = this->id_;
+  s.processCount_   = processor_->getCount();
+  s.time_spent_     = processor_->getTime();
 
+  return s;
+}
 
 

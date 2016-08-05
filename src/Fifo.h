@@ -11,8 +11,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MAUS.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * along with MAUS.  If not, see <http://www.gnu.org/licenses/>
  */
 
 #ifndef BASETOOLS_NFIFO_H
@@ -27,13 +26,13 @@
 
 template <typename T>
 class Fifo {
- public:
+public:
   Fifo(std::size_t s=6);
   Fifo(const Fifo&)  = delete;  // disable copying
-  Fifo(const Fifo&&) = delete;  // disable moving
+  Fifo(Fifo&&) = delete;  // disable moving
 
   Fifo& operator=(const Fifo&)  = delete; // disable assignment
-  Fifo& operator=(const Fifo&&) = delete;
+  Fifo& operator=(Fifo&&) = delete;
 
   T pop();
   void push(const T& item);
@@ -54,7 +53,7 @@ class Fifo {
   void addConsummer()         {++n_consummers_;}
   void rmConsummer()          {--n_consummers_;}
 
- private:
+private:
   std::queue<T> queue_;
   std::atomic_size_t max_size_;
   std::atomic_int    n_producers_;

@@ -11,8 +11,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MAUS.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * along with MAUS.  If not, see <http://www.gnu.org/licenses/>
  */
 
 template <typename T>
@@ -25,9 +24,7 @@ Fifo<T>::Fifo(std::size_t s) {
 template <typename T>
 T Fifo<T>::pop() {
   std::unique_lock<std::mutex> mlock(mutex_);
-  while (queue_.empty()) {
-    cond_empty_.wait(mlock);
-  }
+  cond_empty_.wait(mlock, [&](){return !queue_.empty();});
   T item = queue_.front();
   queue_.pop();
   cond_full_.notify_one();
@@ -38,10 +35,7 @@ T Fifo<T>::pop() {
 template <typename T>
 void Fifo<T>::push(const T& item) {
   std::unique_lock<std::mutex> mlock(mutex_);
-  while (queue_.size()>max_size_) {
-    cond_full_.wait(mlock);
-  }
-
+  cond_full_.wait(mlock, [&](){return queue_.size()<max_size_;});
   queue_.push(item);
   mlock.unlock();
   cond_empty_.notify_one();
@@ -56,12 +50,8 @@ void Fifo<T>::stopWork() {
 
 template <typename T>
 size_t  Fifo<T>::size() {
-//   std::unique_lock<std::mutex> mlock(mutex_);
-//   mlock.lock();
-  mutex_.lock();
+  std::lock_guard<std::mutex> lock(mutex_);
   int size = queue_.size();
-//   mlock.unlock();
-  mutex_.unlock();
   return size;
 }
 

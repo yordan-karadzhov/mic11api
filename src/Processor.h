@@ -11,8 +11,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with MAUS.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * along with MAUS.  If not, see <http://www.gnu.org/licenses/>
  */
 
 #ifndef BASETOOLS_PROCESSOR_H
@@ -29,7 +28,6 @@ std::chrono::high_resolution_clock::now()-t0).count()
 typedef  std::chrono::high_resolution_clock::time_point  hd_time;
 
 ///////////////////// BaseProcessor //////////////////////////////////
-
 class BaseProcessor {
 public:
   BaseProcessor() = delete;  // Never use this default constructor!!!
@@ -40,10 +38,11 @@ public:
   virtual bool process() =0;
   virtual void close() =0;
 
-  bool process_();
+  bool process_with_stats();
 
   std::string getName() const {return name_;}
   int getCount()        const {return processCount_;}
+  int getTime()         const {return time_spent_;}
   void printTimeStats() const;
 
 protected:
@@ -53,7 +52,6 @@ protected:
 };
 
 ///////////////////// PInput /////////////////////////////////////
-
 template <class objOut>
 class PInput {
 public:
@@ -70,7 +68,6 @@ protected:
 };
 
 ///////////////////// POutput /////////////////////////////////////
-
 template <class objIn>
 class POutput {
 public:
@@ -87,7 +84,6 @@ protected:
 };
 
 ///////////////////// InProcessor /////////////////////////////////////
-
 template <class objOut>
 class InProcessor : public BaseProcessor, public PInput<objOut> {
 
@@ -99,7 +95,6 @@ public:
 };
 
 ///////////////////// OutProcessor /////////////////////////////////////
-
 template <class objIn>
 class OutProcessor : public BaseProcessor, public POutput<objIn> {
 
@@ -111,7 +106,6 @@ public:
 };
 
 ///////////////////// InOutProcessor /////////////////////////////////////
-
 template <class objIn, class objOut>
 class InOutProcessor : public BaseProcessor, public PInput<objOut>, public POutput<objIn> {
 

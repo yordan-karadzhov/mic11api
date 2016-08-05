@@ -33,18 +33,11 @@
 #include "tests/TestProcessor.h"
 #include "tests/TestWorker.h"
 
-
-#ifdef ROOT_FOUND
-#include "tests/TestNRootOutput.h"
-CPPUNIT_TEST_SUITE_REGISTRATION(TestNRootOutput);
-#endif
-
 CPPUNIT_TEST_SUITE_REGISTRATION(TestNWorker);
 CPPUNIT_TEST_SUITE_REGISTRATION(TestNProcessor);
 CPPUNIT_TEST_SUITE_REGISTRATION(TestNFifo);
 
 int main(int argc, char* argv[]) {
-
   using namespace CppUnit;
 
   // Informs test-listener about testresults.
