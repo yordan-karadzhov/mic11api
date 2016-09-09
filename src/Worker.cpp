@@ -40,6 +40,7 @@ void WInterface::close() {
   if (processor_) {
     std::lock_guard<std::mutex> lock(mtx);
     processor_->close();
+    std::cout << "\n" << this->getName() << ": jobe done.\n";
   }
 }
 
@@ -54,4 +55,9 @@ WStats WInterface::getStats() const {
   return s;
 }
 
+void WInterface::printStats() const {
+  std::cout << "\n++++++++++++ " << this->getName() << " Id:" 
+            << this->getId() << " ++++++++++++\n\n";
 
+  processor_->printTimeStats();
+}

@@ -88,16 +88,16 @@ bool t_proc::process() {
 /** This processor is a consumer.
  *  The input data type is string.
  */
-class t_out : public OutProcessor<int> {
+class t_output : public OutProcessor<int> {
  public:
-  t_out() : OutProcessor("t_out") {}
+  t_output() : OutProcessor("t_output") {}
 
   void init(string s) override {}
   bool process() override;
   void close() override {}
 };
 
-bool t_out::process() {
+bool t_output::process() {
 
   /// Simulate some work here.
   std::unique_lock<std::mutex> lck (mtx, std::defer_lock);
@@ -111,19 +111,18 @@ bool t_out::process() {
 }
 
 /// For each processor, define a worker.
-IMPLEMENT_INPUT(t_input_worker, int, t_input)           // worker name, data type, proce name
+IMPLEMENT_INPUT(t_input_worker, int, t_input)   // worker name, data type, proce name
 
-IMPLEMENT_UWORKER(t_proc_worker, int, t_proc)  // worker name, input data type, output data type,
-                                                                // processor name
+IMPLEMENT_UWORKER(t_proc_worker, int, t_proc)   // worker name, data type, processor name
 
-IMPLEMENT_OUTPUT(t_output_worker, int, t_out)            // worker name, data type, processor name
+IMPLEMENT_OUTPUT(t_outputput_worker, int, t_output)   // worker name, data type, processor name
 
 int main(int argc, char* argv[]) {
 
   /// Hire 4 workers.
   t_input_worker  w0(0);
   t_proc_worker   w1(1), w2(2);
-  t_output_worker w3(3);
+  t_outputput_worker w3(3);
 
 
   /**Position the 4 workers.
@@ -135,12 +134,13 @@ int main(int argc, char* argv[]) {
   *       |--> w2 -->|
   */
 
-  /** w1 and w2 are consumers of the output of w0.
+  /** The inputs of w1 and w2 are consumers of the output of w0.
    *  In this case the data buffer is originally owned by w0.
    */
-  w0.getOutput() >> w1 >> w2;
+  w0 >> w1.getInput();
+  w0 >> w2.getInput();
 
-  /** w3 is a consumer of the outputs of w1 and w2.
+  /** The input of w3 is a consumer of the outputs of w1 and w2.
    *  In this case the data buffer is originally owned by w3.
    */
   w1 << w3.getInput();

@@ -45,6 +45,16 @@ class tproc_str : public InOutProcessor<int,std::string> {
   void close() {}
 };
 
+class tout_int : public OutProcessor<int> {
+ public:
+  tout_int() : OutProcessor<int> ("testProcInt") {}
+  ~tout_int() {}
+
+  void init(std::string s) {}
+  bool process() {return true;}
+  void close() {}
+};
+
 class TestNProcessor  : public CppUnit::TestFixture {
 
  public:

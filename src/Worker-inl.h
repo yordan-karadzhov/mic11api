@@ -83,12 +83,13 @@ bool WInput<inDataType>::pull() {
 template <class outDataType>
 void InputWorker<outDataType>::start(int n) {
 
-  this->init();
   int i=0;
   while(i<n || n==0) {
     *(WOutput<outDataType>::output_) = new outDataType;
-    if( !this->process() )
+    if( !this->process() ) {
       this->stopWork();
+      return;
+    }
 
     this->push();
     ++i;
@@ -107,7 +108,6 @@ void InputWorker<outDataType>::stopWork() {
 template <class inDataType>
 void OutputWorker<inDataType>::start(int n) {
 
-  this->init();
   int i=0;
   while(i<n || n==0) {
     if( !this->pull()) {
@@ -137,7 +137,6 @@ void OutputWorker<inDataType>::stopWork() {
 template <class dataType>
 void UpdateWorker<dataType>::start(int n) {
 
-  this->init();
   int i=0;
   while(i<n || n==0) {
     if( !this->pull()) {
@@ -145,8 +144,10 @@ void UpdateWorker<dataType>::start(int n) {
       return;
     }
 
-    if( !this->process() )
+    if( !this->process() ) {
       this->stopWork();
+      return;
+    }
 
     this->push();
     ++i;
@@ -166,7 +167,6 @@ void UpdateWorker<dataType>::stopWork() {
 template <class inDataType, class outDataType>
 void TransformWorker<inDataType, outDataType>::start(int n) {
 
-  this->init();
   int i=0;
   while(i<n || n==0) {
     if( !this->pull()) {
@@ -175,8 +175,10 @@ void TransformWorker<inDataType, outDataType>::start(int n) {
     }
 
     *(WOutput<outDataType>::output_) = new outDataType;
-    if( !this->process() )
+    if( !this->process() ) {
       this->stopWork();
+      return;
+    }
 
     delete *(WInput<inDataType>::input_);
     this->push();

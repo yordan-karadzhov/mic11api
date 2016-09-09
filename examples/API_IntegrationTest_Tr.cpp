@@ -25,6 +25,7 @@ extern std::mutex mtx;
 // Mic11
 #include "Worker.h"
 #include "Macros.h"
+#include "GetBackTrace.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -88,16 +89,16 @@ bool t_proc::process() {
 /** This processor is a consumer.
  *  The input data type is string.
  */
-class t_out : public OutProcessor<std::string> {
+class t_output : public OutProcessor<std::string> {
  public:
-  t_out() : OutProcessor("t_out") {}
+  t_output() : OutProcessor("t_output") {}
 
   void init(string s) override {}
   bool process() override;
   void close() override {}
 };
 
-bool t_out::process() {
+bool t_output::process() {
 
   /// Simulate some work here.
   std::unique_lock<std::mutex> lck (mtx, std::defer_lock);
@@ -114,16 +115,18 @@ bool t_out::process() {
 IMPLEMENT_INPUT(t_input_worker, int, t_input)           // worker name, data type, proce name
 
 IMPLEMENT_TWORKER(t_proc_worker, int, std::string, t_proc)  // worker name, input data type, output data type,
-                                                                // processor name
+                                                            // processor name
 
-IMPLEMENT_OUTPUT(t_output_worker, std::string, t_out)            // worker name, data type, processor name
+IMPLEMENT_OUTPUT(t_outputput_worker, std::string, t_output)       // worker name, data type, processor name
 
 int main(int argc, char* argv[]) {
+
+  SetErrorHdlr();
 
   /// Hire 4 workers.
   t_input_worker  w0(0);
   t_proc_worker   w1(1), w2(2);
-  t_output_worker w3(3);
+  t_outputput_worker w3(3);
 
   /**Position the 4 workers.
   *
@@ -134,14 +137,15 @@ int main(int argc, char* argv[]) {
   *       |--> w2 -->|
   */
 
-  /** w1 and w2 are consumers of the output of w0.
-   *  In this case the data buffer is owned by w0.
+  /** The inputs of w1 and w2 are consumers of the output of w0.
+   *  In this case the data buffer is originally owned by w0.
    */
-  w0.getOutput() >> w1 >> w2;
+  w0 >> w1.getInput();
+  w0 >> w2.getInput();
 
-//   /** w3 is a consumer of the outputs of w1 and w2.
-//    *  In this case the data buffer is owned by w3.
-//    */
+  /** The input of w3 is a consumer of the outputs of w1 and w2.
+   *  In this case the data buffer is originally owned by w3.
+   */
   w1 << w3.getInput();
   w2 << w3.getInput();
 //   w1 << ( w2 << w3.getInput() );

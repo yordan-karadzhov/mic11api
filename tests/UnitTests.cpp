@@ -32,10 +32,12 @@
 #include "tests/TestFifo.h"
 #include "tests/TestProcessor.h"
 #include "tests/TestWorker.h"
+#include "tests/TestMacros.h"
 
 CPPUNIT_TEST_SUITE_REGISTRATION(TestNWorker);
 CPPUNIT_TEST_SUITE_REGISTRATION(TestNProcessor);
 CPPUNIT_TEST_SUITE_REGISTRATION(TestNFifo);
+CPPUNIT_TEST_SUITE_REGISTRATION(TestMacros);
 
 int main(int argc, char* argv[]) {
   using namespace CppUnit;

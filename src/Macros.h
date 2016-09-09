@@ -17,47 +17,104 @@
 #ifndef MACROS_H
 #define MACROS_H 1
 
+
 #define DUMMY bool
+#define STREAM_DOWN(dataType) \
+void operator>> (std::shared_ptr< Fifo<dataType*> > &fifo) \
+{ fifo = this->getOutFifoPtr(); fifo->addConsummer();}
+
+
+
+#define STREAM_UP(dataType) \
+void  operator<< (std::shared_ptr< Fifo<dataType*> > &fifo_out) \
+{ this->setOutFifoPtr(fifo_out);}
+
+
 
 #define IMPLEMENT_UWORKER(name, input, processor_type) \
 class name : public UpdateWorker<input> { \
 public: \
 name (int id) : UpdateWorker(#name, new processor_type, id) {} \
-}; \
-std::shared_ptr< Fifo<input*> > & operator>> (std::shared_ptr< Fifo<input*> > &fifo_in, name &worker) \
-{ worker.setInFifoPtr(fifo_in); return fifo_in;} \
-std::shared_ptr< Fifo<input*> > &  operator<< (name &worker, std::shared_ptr< Fifo<input*> > &fifo_out) \
-{ worker.setOutFifoPtr(fifo_out); return fifo_out;}
+STREAM_DOWN(input) \
+STREAM_UP(input) \
+};
+
+
+
+#define IMPLEMENT_USER_UWORKER(name, input, processor_type) \
+class name : public UpdateWorker<input> { \
+public: \
+name (int id) : UpdateWorker(#name, new processor_type, id) {} \
+virtual void start(int n=0);\
+STREAM_DOWN(input) \
+STREAM_UP(input) \
+};
+
+
 
 #define IMPLEMENT_TWORKER(name, input, output, processor_type) \
 class name : public TransformWorker<input, output> { \
 public: \
 name (int id) : TransformWorker(#name, new processor_type, id) {} \
-}; \
-std::shared_ptr< Fifo<input*> > & operator>> (std::shared_ptr< Fifo<input*> > &fifo_in, name &worker) \
-{ worker.setInFifoPtr(fifo_in); return fifo_in;} \
-std::shared_ptr< Fifo<output*> > &  operator<< (name &worker, std::shared_ptr< Fifo<output*> > &fifo_out) \
-{ worker.setOutFifoPtr(fifo_out); return fifo_out;}
+STREAM_DOWN(output) \
+STREAM_UP(output) \
+};
+
+
+
+#define IMPLEMENT_USER_TWORKER(name, input, output, processor_type) \
+class name : public TransformWorker<input, output> { \
+public: \
+name (int id) : TransformWorker(#name, new processor_type, id) {} \
+virtual void start(int n=0);\
+STREAM_DOWN(output) \
+STREAM_UP(output) \
+};
+
+
 
 #define IMPLEMENT_INPUT(name, output, processor_type) \
 class name : public InputWorker<output> { \
+public:\
+name (int id) : InputWorker(#name, new processor_type, id) {} \
+STREAM_DOWN(output) \
+};
+
+
+
+#define IMPLEMENT_USER_INPUT(name, output, processor_type) \
+class name : public InputWorker<output> { \
 public: \
 name (int id) : InputWorker(#name, new processor_type, id) {} \
+virtual void start(int n=0);\
+STREAM_DOWN(output) \
 };
+
+
 
 #define IMPLEMENT_OUTPUT(name, input, processor_type) \
 class name : public OutputWorker<input> { \
 public: \
 name (int id) : OutputWorker(#name, new processor_type, id) {} \
-}; \
-std::shared_ptr< Fifo<input*> > & operator>> (std::shared_ptr< Fifo<input*> > &fifo_in, name &worker) \
-{ worker.setInFifoPtr(fifo_in); return fifo_in;}
+};
 
 
-#define JOB_STAR_N(worker, n) \
+
+#define IMPLEMENT_USER_OUTPUT(name, input, processor_type) \
+class name : public OutputWorker<input> { \
+public: \
+name (int id) : OutputWorker(#name, new processor_type, id) {} \
+virtual void start(int n=0);\
+};
+
+
+
+#define JOB_START_N(worker, n) \
 ( [&] { worker.start(n); } )
 
-#define JOB_STAR(worker) \
+
+
+#define JOB_START(worker) \
 ( [&] { worker.start(); } )
 
 #endif

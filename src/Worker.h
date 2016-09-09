@@ -59,6 +59,7 @@ public:
   int          getCount() const  {return processor_->getCount();}
   void         enableTimeStats() {time_stats_enable_ = true;}
   WStats       getStats() const;
+  void         printStats() const;
 
 // protected:
   BaseProcessor *processor_;
@@ -119,9 +120,9 @@ public:
   }
   virtual ~InputWorker() {}
 
-  virtual void start(int n=0) final;
+  virtual void start(int n=0);
 
-private:
+protected:
   void stopWork();
 };
 
@@ -137,9 +138,9 @@ public:
   }
   virtual ~OutputWorker() {}
 
-  virtual void start(int n=0) final;
+  virtual void start(int n=0);
 
-private:
+protected:
   void stopWork();
 };
 
@@ -160,9 +161,9 @@ class UpdateWorker
     WOutput<dataType>::output_ = nullptr;
   }
 
-  virtual void start(int n=0) final;
+  virtual void start(int n=0);
 
-private:
+protected:
   void stopWork();
 };
 
@@ -180,9 +181,9 @@ class TransformWorker
 
   virtual ~TransformWorker() {}
 
-  virtual void start(int n=0) final;
+  virtual void start(int n=0);
 
-private:
+protected:
   void stopWork();
 
 };
