@@ -18,6 +18,7 @@ template <typename T>
 Fifo<T>::Fifo(std::size_t s) {
   max_size_ = s;
   n_producers_ = 0;
+  n_active_producers_ = 0;
   n_consummers_ = 0;
 }
 
@@ -41,23 +42,53 @@ void Fifo<T>::push(const T& item) {
   cond_empty_.notify_one();
 }
 
+
 template <typename T>
-void Fifo<T>::stopWork() {
+void Fifo<T>::rmActiveProducer(proc_status_t e) {
+   --n_active_producers_;
+   if (!n_active_producers_)
+     this->stop();
+
+   if (status_ < e)
+    status_.store(e);
+}
+
+template <typename T>
+void Fifo<T>::stop() {
   int n_consummers = this->getNConsummers();
   for (int i=0;i<n_consummers;++i)
     this->push(nullptr);
+
+  this->resetActiveProducers();
 }
 
 template <typename T>
 size_t  Fifo<T>::size() {
   std::lock_guard<std::mutex> lock(mutex_);
-  int size = queue_.size();
+  int size = this->queue_.size();
   return size;
 }
 
 template <typename T>
-void Fifo<T>::rmProducer() {
-   --n_producers_;
-   if (!n_producers_)
-     this->stopWork();
+void Fifo<T>::clear() {
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    int size = this->queue_.size();
+    for (int i=0;i<size;++i) {
+      queue_.pop();
+    }
+  }
+  cond_full_.notify_all();
+}
+
+template <typename T>
+void PtrFifo<T>::clear() {
+  std::lock_guard<std::mutex> lock(Fifo<T>::mutex_);
+  int size = this->queue_.size();
+  for (int i=0;i<size;++i) {
+    T obj = Fifo<T>::queue_.front();
+    Fifo<T>::queue_.pop();
+
+    if (obj) delete obj;
+  }
 }

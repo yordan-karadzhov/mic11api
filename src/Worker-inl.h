@@ -39,7 +39,7 @@ void WOutput<outDataType>::setOutFifoPtr(std::shared_ptr< Fifo<outDataType*> >& 
   fifo_out_->addProducer();
 }
 template <class outDataType>
-void WOutput<outDataType>::push() {
+void WOutput<outDataType>::push_() {
   fifo_out_->push(*output_);
   *output_ = nullptr;
 }
@@ -70,7 +70,7 @@ void WInput<inDataType>::setInFifoPtr(std::shared_ptr< Fifo<inDataType*> >& f) {
 }
 
 template <class inDataType>
-bool WInput<inDataType>::pull() {
+bool WInput<inDataType>::pull_() {
   *input_ = fifo_in_->pop();
 
   if (*input_)
@@ -81,116 +81,84 @@ bool WInput<inDataType>::pull() {
 
 ///////////////////// InputWorker /////////////////////////
 template <class outDataType>
-void InputWorker<outDataType>::start(int n) {
-
-  int i=0;
-  while(i<n || n==0) {
-    *(WOutput<outDataType>::output_) = new outDataType;
-    if( !this->process() ) {
-      this->stopWork();
-      return;
-    }
-
-    this->push();
-    ++i;
-  }
-
-  this->stopWork();
+void InputWorker<outDataType>::push() {
+  this->push_();
 }
 
 template <class outDataType>
-void InputWorker<outDataType>::stopWork() {
-  WOutput<outDataType>::fifo_out_->rmProducer();
-  this->close();
+bool InputWorker<outDataType>::pull() {
+  if (input_closed_)
+    return false;
+
+  *(WOutput<outDataType>::output_) = new outDataType;
+  return true;
+}
+
+template <class outDataType>
+void InputWorker<outDataType>::stop() {
+  WOutput<outDataType>::fifo_out_->rmActiveProducer(status_);
+  this->printGooodBy();
 }
 
 ///////////////////// OutputWorker /////////////////////////
 template <class inDataType>
-void OutputWorker<inDataType>::start(int n) {
-
-  int i=0;
-  while(i<n || n==0) {
-    if( !this->pull()) {
-      this->stopWork();
-      return;
-    }
-
-    if( !this->process() ) {
-      this->stopWork();
-      return;
-    }
-
-    delete *(WInput<inDataType>::input_);
-    ++i;
-  }
-
-  this->stopWork();
+bool OutputWorker<inDataType>::pull() {
+  return this->pull_();
 }
 
 template <class inDataType>
-void OutputWorker<inDataType>::stopWork() {
-  WInput<inDataType>::fifo_in_->rmConsummer();
-  this->close();
+void OutputWorker<inDataType>::push() {
+  delete *(WInput<inDataType>::input_);
+
+}
+
+template <class inDataType>
+void OutputWorker<inDataType>::stop() {
+  if (status_ == proc_status_t::Error_s || status_ == proc_status_t::FatalError_s)
+    WInput<inDataType>::fifo_in_->consummerError(status_);
+  this->printGooodBy();
 }
 
 /////////////////// UpdateWorker /////////////////////////////////////
 template <class dataType>
-void UpdateWorker<dataType>::start(int n) {
-
-  int i=0;
-  while(i<n || n==0) {
-    if( !this->pull()) {
-      this->stopWork();
-      return;
-    }
-
-    if( !this->process() ) {
-      this->stopWork();
-      return;
-    }
-
-    this->push();
-    ++i;
-  }
-
-  this->stopWork();
+void UpdateWorker<dataType>::push() {
+  this->push_();
 }
 
 template <class dataType>
-void UpdateWorker<dataType>::stopWork() {
-  WInput<dataType>::fifo_in_->rmConsummer();
-  WOutput<dataType>::fifo_out_->rmProducer();
-  this->close();
+bool UpdateWorker<dataType>::pull() {
+  return this->pull_();
+}
+
+template <class dataType>
+void UpdateWorker<dataType>::stop() {
+  if (status_ == proc_status_t::Error_s || status_ == proc_status_t::FatalError_s)
+    WInput<dataType>::fifo_in_->consummerError(status_);
+
+  WOutput<dataType>::fifo_out_->rmActiveProducer(status_);
+
+  this->printGooodBy();
 }
 
 /////////////////// TransformWorker /////////////////////////////////////
 template <class inDataType, class outDataType>
-void TransformWorker<inDataType, outDataType>::start(int n) {
-
-  int i=0;
-  while(i<n || n==0) {
-    if( !this->pull()) {
-      this->stopWork();
-      return;
-    }
-
-    *(WOutput<outDataType>::output_) = new outDataType;
-    if( !this->process() ) {
-      this->stopWork();
-      return;
-    }
-
-    delete *(WInput<inDataType>::input_);
-    this->push();
-    ++i;
-  }
-
-  this->stopWork();
+void TransformWorker<inDataType, outDataType>::push() {
+  this->push_();
+  delete *(WInput<inDataType>::input_);
 }
 
 template <class inDataType, class outDataType>
-void TransformWorker<inDataType, outDataType>::stopWork() {
-  WInput<inDataType>::fifo_in_->rmConsummer();
-  WOutput<outDataType>::fifo_out_->rmProducer();
-  this->close();
+bool TransformWorker<inDataType, outDataType>::pull() {
+  *(WOutput<outDataType>::output_) = new outDataType;
+  return this->pull_();
+}
+
+template <class inDataType, class outDataType>
+void TransformWorker<inDataType, outDataType>::stop() {
+  if (status_ == proc_status_t::Error_s || status_ == proc_status_t::FatalError_s)
+    WInput<inDataType>::fifo_in_->consummerError(status_);
+
+  WOutput<outDataType>::fifo_out_->rmActiveProducer(status_);
+
+  this->printGooodBy();
 }

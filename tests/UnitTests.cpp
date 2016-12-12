@@ -29,14 +29,18 @@
 #include <cppunit/XmlOutputter.h>
 
 // Mic11
+#include "tests/TestFsm.h"
 #include "tests/TestFifo.h"
 #include "tests/TestProcessor.h"
 #include "tests/TestWorker.h"
 #include "tests/TestMacros.h"
+#include "tests/TestIntegration.h"
 
-CPPUNIT_TEST_SUITE_REGISTRATION(TestNWorker);
-CPPUNIT_TEST_SUITE_REGISTRATION(TestNProcessor);
-CPPUNIT_TEST_SUITE_REGISTRATION(TestNFifo);
+CPPUNIT_TEST_SUITE_REGISTRATION(TestFsm);
+CPPUNIT_TEST_SUITE_REGISTRATION(TestIntegration);
+CPPUNIT_TEST_SUITE_REGISTRATION(TestWorker);
+CPPUNIT_TEST_SUITE_REGISTRATION(TestProcessor);
+CPPUNIT_TEST_SUITE_REGISTRATION(TestFifo);
 CPPUNIT_TEST_SUITE_REGISTRATION(TestMacros);
 
 int main(int argc, char* argv[]) {

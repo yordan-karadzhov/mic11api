@@ -30,9 +30,9 @@ class tproc_int : public InOutProcessor<int,int> {
   tproc_int() : InOutProcessor<int,int> ("testProcInt") {}
   ~tproc_int() {}
 
-  void init(std::string s) {}
-  bool process();
-  void close() {}
+  void init(std::string s, void *arg) {}
+  proc_status_t process();
+  void close(proc_status_t) {}
 };
 
 class tproc_str : public InOutProcessor<int,std::string> {
@@ -40,9 +40,9 @@ class tproc_str : public InOutProcessor<int,std::string> {
   tproc_str() : InOutProcessor("testProcStr") {}
   ~tproc_str() {}
 
-  void init(std::string s) {}
-  bool process();
-  void close() {}
+  void init(std::string s, void *arg) {}
+  proc_status_t process();
+  void close(proc_status_t) {}
 };
 
 class tout_int : public OutProcessor<int> {
@@ -50,21 +50,22 @@ class tout_int : public OutProcessor<int> {
   tout_int() : OutProcessor<int> ("testProcInt") {}
   ~tout_int() {}
 
-  void init(std::string s) {}
-  bool process() {return true;}
-  void close() {}
+  void init(std::string s, void *arg) {}
+  proc_status_t process() {return proc_status_t::OK_s;}
+  void close(proc_status_t) {}
 };
 
-class TestNProcessor  : public CppUnit::TestFixture {
+class TestProcessor  : public CppUnit::TestFixture {
 
  public:
-  void setUp(void);
-  void tearDown(void);
+  void setUp();
+  void tearDown();
 
  protected:
-  void TestProcessSameData(void);
-  void TestProcessDiffData(void);
-  void TestSetInOut(void);
+  void TestStatusOperators();
+  void TestProcessSameData();
+  void TestProcessDiffData();
+  void TestSetInOut();
 
  private:
   tproc_int mTestObj_1;
@@ -72,7 +73,8 @@ class TestNProcessor  : public CppUnit::TestFixture {
   int *inPtr, *outPtr_int;
   std::string *outPtr_str;
 
-  CPPUNIT_TEST_SUITE( TestNProcessor );
+  CPPUNIT_TEST_SUITE( TestProcessor );
+  CPPUNIT_TEST( TestStatusOperators );
   CPPUNIT_TEST( TestSetInOut );
   CPPUNIT_TEST( TestProcessSameData );
   CPPUNIT_TEST( TestProcessDiffData );

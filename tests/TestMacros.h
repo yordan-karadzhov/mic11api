@@ -29,22 +29,25 @@
 // Mic11
 #include "src/Macros.h"
 #include "src/Worker.h"
+#include "src/Fsm.h"
+#include "src/State.h"
 #include "tests/TestWorker.h"
 
-class TestMacros : public CppUnit::TestFixture {
 
+class TestMacros : public CppUnit::TestFixture {
  public:
-  void setUp(void);
-  void tearDown(void);
+  void setUp();
+  void tearDown();
 
  protected:
-  void TestStreams(void);
+  void TestStreams();
+  void TestStateFactory();
 
  private:
 
   CPPUNIT_TEST_SUITE( TestMacros );
   CPPUNIT_TEST( TestStreams );
-
+  CPPUNIT_TEST( TestStateFactory );
   CPPUNIT_TEST_SUITE_END();
 };
 

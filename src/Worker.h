@@ -21,6 +21,7 @@
 #include <iostream>
 #include <mutex>
 #include <memory>
+#include <atomic>
 
 // Mic11
 #include "Fifo.h"
@@ -31,14 +32,14 @@
 struct WStats {
   std::string worker_name_, processor_name_;
   int id_;
-  int processCount_;
+  int process_count_;
   double time_spent_;
 };
 
 ///////////////////// WInterface ////////////////////////////////////
 class WInterface {
 public:
-  WInterface(std::string n, BaseProcessor *p, int id=0);
+  WInterface(std::string n, PInterface *p, int id=0);
   virtual ~WInterface() {delete processor_;}
 
   WInterface(const WInterface&)  = delete;  // disable copying
@@ -47,27 +48,42 @@ public:
   WInterface& operator=(const WInterface&)  = delete; // disable assignment
   WInterface& operator=(WInterface&&) = delete;
 
-  virtual void start(int n=0) =0;
+  virtual void start(int n=0);
+  virtual void stop() =0;
+  virtual void push() =0;
+  virtual bool pull() =0;
   void operator () (int n=0) {this->start(n);}
 
-  void init(std::string s="");
-  bool process();
-  void close();
+//   void init(std::string s="");
+  void           init(std::string s, void *atg=nullptr);
+  proc_status_t  process();
+  void           close();
 
-  std::string  getName()  const  {return name_;}
-  int          getId()    const  {return id_;}
-  int          getCount() const  {return processor_->getCount();}
-  void         enableTimeStats() {time_stats_enable_ = true;}
-  WStats       getStats() const;
-  void         printStats() const;
+  std::string    name()   const   {return name_;}
+  int            id()     const   {return id_;}
+  proc_status_t  status() const   {return status_.load();}
 
-// protected:
-  BaseProcessor *processor_;
+  void setStatus(proc_status_t s) {status_.store(s);}
 
+  int     getCount() const   {return processor_->getCount();}
+  void    enableStats()      {time_stats_enable_ = true;}
+  void    closeInput();
+  WStats  getStats()   const;
+  void    printStats() const;
+  void    printGooodBy();
+
+protected:
+  PInterface *processor_;
+
+  std::atomic<proc_status_t> status_;
+
+private:
   std::string name_;
-  int id_;
+  int  id_;
   bool time_stats_enable_;
 
+protected:
+  bool input_closed_;
 };
 
 ///////////////////// WOutput /////////////////////////////////////
@@ -83,7 +99,7 @@ public:
   void setOutFifoPtr(std::shared_ptr< Fifo<outDataType*> >& f);
 
 protected:
-  void push();
+  void push_();
 
   outDataType **output_;
   std::shared_ptr< Fifo<outDataType*> > fifo_out_;
@@ -102,7 +118,7 @@ public:
   void setInFifoPtr(std::shared_ptr< Fifo<inDataType*> >& f);
 
 protected:
-  bool pull();
+  bool pull_();
 
   inDataType  **input_;
   std::shared_ptr< Fifo<inDataType*> > fifo_in_;
@@ -120,10 +136,10 @@ public:
   }
   virtual ~InputWorker() {}
 
-  virtual void start(int n=0);
-
 protected:
-  void stopWork();
+  bool pull() final;
+  void push() final;
+  void stop() final;
 };
 
 ///////////////////// OutputWorker /////////////////////////////////
@@ -138,10 +154,10 @@ public:
   }
   virtual ~OutputWorker() {}
 
-  virtual void start(int n=0);
-
 protected:
-  void stopWork();
+  bool pull() final;
+  void push() final;
+  void stop() final;
 };
 
 ///////////////// UpdateWorker /////////////////////////////////////
@@ -161,10 +177,10 @@ class UpdateWorker
     WOutput<dataType>::output_ = nullptr;
   }
 
-  virtual void start(int n=0);
-
 protected:
-  void stopWork();
+  bool pull() final;
+  void push() final;
+  void stop() final;
 };
 
 ///////////////// TransformWorker //////////////////////////////////
@@ -181,10 +197,10 @@ class TransformWorker
 
   virtual ~TransformWorker() {}
 
-  virtual void start(int n=0);
-
 protected:
-  void stopWork();
+  bool pull() final;
+  void push() final;
+  void stop() final;
 
 };
 

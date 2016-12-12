@@ -17,23 +17,29 @@
 
 #include "TestWorker.h"
 
-bool tproc_int1::process() {
+proc_status_t tproc_int1::process() {
   **output_ += 55;
-//   std::cout << "  " << processCount_ << "  " << **input_ << " -> " << **output_ << std::endl;
-  return true;
+//   std::cout << "  " << processCount_ << " " << **output_ << std::endl;
+  if (**output_ < 0)
+    return proc_status_t::Error_s;
+
+  if (**output_ > 200)
+    return proc_status_t::Interrupt_s;
+
+  return proc_status_t::OK_s;
 }
 
 using namespace std;
 
-void TestNWorker::setUp(void) {
-  mTestObj_1.enableTimeStats();
-  mTestObj_2.enableTimeStats();
-  mTestObj_3.enableTimeStats();
+void TestWorker::setUp() {
+  mTestObj_1.enableStats();
+  mTestObj_2.enableStats();
+  mTestObj_3.enableStats();
 }
 
-void TestNWorker::tearDown(void) {}
+void TestWorker::tearDown() {}
 
-void TestNWorker::Test1Worker(void) {
+void TestWorker::Test1Worker() {
 
   auto fifo_ptr = mTestObj_1.getInput();
   fifo_ptr->setMaxSize(11);
@@ -52,7 +58,7 @@ void TestNWorker::Test1Worker(void) {
 }
 
 #define NPROC 16
-void TestNWorker::Test2WorkersSameData(void) {
+void TestWorker::Test2WorkersSameData() {
 
   mTestObj_1.getInput()->setMaxSize(NPROC+1);
   mTestObj_1.getOutput()->setMaxSize(NPROC+1);
@@ -94,7 +100,7 @@ void TestNWorker::Test2WorkersSameData(void) {
 //   CPPUNIT_ASSERT(obj == nullptr);
 }
 
-void TestNWorker::Test2WorkersDiffData(void) {
+void TestWorker::Test2WorkersDiffData() {
 
   mTestObj_1.getInput()->setMaxSize(NPROC+1);
   mTestObj_3.getInput()->setMaxSize(NPROC+1);
@@ -137,4 +143,51 @@ void TestNWorker::Test2WorkersDiffData(void) {
 //   CPPUNIT_ASSERT(obj == nullptr);
 }
 
+void TestWorker::TestStop() {
+  auto fifo_in_ptr = mTestObj_1.getInput();
+  auto fifo_out_ptr = mTestObj_1.getOutput();
+  CPPUNIT_ASSERT(fifo_in_ptr->size() == 0);
+  fifo_in_ptr->setMaxSize(11);
+  for (int i=0;i<10;++i)
+    fifo_in_ptr->push(new int(i+143));
 
+  fifo_in_ptr->push(nullptr);
+  CPPUNIT_ASSERT(fifo_in_ptr->size() == 11);
+  CPPUNIT_ASSERT(fifo_out_ptr->size() == 0);
+
+  mTestObj_1.init("");
+  mTestObj_1.start();
+  CPPUNIT_ASSERT(fifo_in_ptr->size() == 7);
+  CPPUNIT_ASSERT(fifo_out_ptr->size() == 3);
+
+  CPPUNIT_ASSERT(mTestObj_1.status() == proc_status_t::Interrupt_s);
+  CPPUNIT_ASSERT(fifo_in_ptr->status() == proc_status_t::OK_s);
+  CPPUNIT_ASSERT(fifo_out_ptr->status() == proc_status_t::Interrupt_s);
+}
+
+void TestWorker::TestError() {
+  auto fifo_in_ptr = mTestObj_1.getInput();
+  auto fifo_out_ptr = mTestObj_1.getOutput();
+  CPPUNIT_ASSERT(fifo_in_ptr->size() == 0);
+  fifo_in_ptr->setMaxSize(11);
+  for (int i=0;i<10;++i) {
+    if (i==6)
+      fifo_in_ptr->push(new int(-200));
+    else
+      fifo_in_ptr->push(new int(i+13));
+  }
+
+  fifo_in_ptr->push(nullptr);
+  CPPUNIT_ASSERT(fifo_in_ptr->size() == 11);
+  CPPUNIT_ASSERT(fifo_out_ptr->size() == 0);
+
+  mTestObj_1.init("");
+  mTestObj_1.start();
+
+  CPPUNIT_ASSERT(fifo_in_ptr->size() == 4);
+  CPPUNIT_ASSERT(fifo_out_ptr->size() == 6);
+
+  CPPUNIT_ASSERT(mTestObj_1.status() == proc_status_t::Error_s);
+  CPPUNIT_ASSERT(fifo_in_ptr->status() == proc_status_t::Error_s);
+  CPPUNIT_ASSERT(fifo_out_ptr->status() == proc_status_t::Error_s);
+}

@@ -17,22 +17,23 @@
 
 #include "TestProcessor.h"
 
-bool tproc_int::process() {
+proc_status_t tproc_int::process() {
   **output_ = **input_ + 55;
 //   std::cout << "  " << processCount_ << "  " << **input_ << " -> " << **output_ << std::endl;
-  return true;
+
+  return proc_status_t::OK_s;
 }
 
 
-bool tproc_str::process() {
+proc_status_t tproc_str::process() {
   std::stringstream ss;
   ss << "output is " << **input_ - 200;
   **output_ = ss.str();
 //   std::cout << "  " << processCount_ << "  " << **input_ << " -> " << **output_ << std::endl;
-  return true;
+  return proc_status_t::OK_s;
 }
 
-void TestNProcessor::setUp(void) {
+void TestProcessor::setUp() {
   inPtr  = new int;
   outPtr_int = new int;
   outPtr_str = new std::string;
@@ -46,24 +47,54 @@ void TestNProcessor::setUp(void) {
   *inPtr = 3;
 }
 
-void TestNProcessor::tearDown(void) {
+void TestProcessor::tearDown() {
   delete inPtr;
   delete outPtr_int;
 }
 
-void TestNProcessor::TestProcessSameData(void) {
+void TestProcessor::TestStatusOperators() {
+  proc_status_t a, b, c, st;
+
+  a = proc_status_t::OK_s;
+  b = proc_status_t::Interrupt_s;
+  st = a & b;
+  CPPUNIT_ASSERT (st == proc_status_t::Interrupt_s);
+
+  a &= b;
+  CPPUNIT_ASSERT (a == proc_status_t::Interrupt_s);
+
+  b = proc_status_t::Error_s;
+  st = a & b;
+  CPPUNIT_ASSERT (st == proc_status_t::Error_s);
+  a &= b;
+  CPPUNIT_ASSERT (a == proc_status_t::Error_s);
+
+  b = proc_status_t::FatalError_s;
+  st = a & b;
+  CPPUNIT_ASSERT (st == proc_status_t::FatalError_s);
+  a &= b;
+  CPPUNIT_ASSERT (a == proc_status_t::FatalError_s);
+
+  a = proc_status_t::Interrupt_s;
+  b = proc_status_t::Error_s;
+  c = proc_status_t::OK_s;
+  st = a & b & c;
+  CPPUNIT_ASSERT (st == proc_status_t::Error_s);
+}
+
+void TestProcessor::TestProcessSameData() {
   mTestObj_1.process();
   int testOut = *(mTestObj_1.getOutputPtr());
   CPPUNIT_ASSERT (testOut == 58);
 }
 
-void TestNProcessor::TestProcessDiffData(void) {
+void TestProcessor::TestProcessDiffData() {
   mTestObj_2.process();
   std::string testOut = *(mTestObj_2.getOutputPtr());
   CPPUNIT_ASSERT (testOut == "output is -197");
 }
 
-void TestNProcessor::TestSetInOut(void) {
+void TestProcessor::TestSetInOut() {
   mTestObj_1.setInputObj(&inPtr);
   mTestObj_1.setOutputObj(&inPtr);
 

@@ -14,20 +14,68 @@
  * along with MAUS.  If not, see <http://www.gnu.org/licenses/>
  */
 
-#ifndef BASETOOLS_NFIFO_H
-#define BASETOOLS_NFIFO_H 1
+#ifndef _FIFO_H
+#define _FIFO_H 1
 
 // C++
 #include <queue>
-#include <thread>
 #include <mutex>
 #include <atomic>
 #include <condition_variable>
 
-template <typename T>
-class Fifo {
+#include "Macros.h"
+#include "Processor.h"
+
+class Node {
 public:
-  Fifo(std::size_t s=6);
+  Node();
+  virtual ~Node() {}
+
+  int  getNProducers() const;
+  void setNProducers(int n);
+  void addProducer();
+  void rmProducer();
+
+  int  getNConsummers() const;
+  void setNConsummers(int n);
+  void addConsummer();
+  void rmConsummer();
+
+  proc_status_t status();
+  void setStatus(proc_status_t s) {status_.store(s);}
+
+  void consummerError(proc_status_t e);
+  void rmActiveProducer(proc_status_t e);
+  void resetError();
+
+  int  getNActiveProducers() const;
+  void resetActiveProducers();
+
+  virtual size_t   size() =0;
+  virtual void     clear() =0;
+//   virtual void deepClear() =0;
+
+  size_t  getMaxSize() const;
+  void    setMaxSize(size_t ms);
+
+protected:
+  std::atomic_size_t max_size_;
+  std::atomic_int n_producers_;
+  std::atomic_int n_consummers_;
+  std::atomic_int n_active_producers_;
+  std::atomic<proc_status_t> status_;
+
+  std::mutex mutex_;
+  std::condition_variable cond_empty_;
+  std::condition_variable cond_full_;
+};
+
+template <typename T>
+class Fifo : public Node {
+public:
+  Fifo(std::size_t s=10);
+  virtual ~Fifo() {}
+
   Fifo(const Fifo&)  = delete;  // disable copying
   Fifo(Fifo&&) = delete;  // disable moving
 
@@ -37,31 +85,30 @@ public:
   T pop();
   void push(const T& item);
 
-  void stopWork();
+  void rmActiveProducer(proc_status_t e);
 
-  size_t  size();
-  int  getMaxSize() const     {return max_size_.load();}
-  void setMaxSize(int ms)     {max_size_.store(ms);}
+  void stop();
 
-  int  getNProducers() const  {return n_producers_.load();}
-  void setNProducers(int n)   {n_producers_.store(n);}
-  void addProducer()          {++n_producers_;}
-  void rmProducer();
-
-  int  getNConsummers() const {return n_consummers_.load();}
-  void setNConsummers(int n)  {n_consummers_.store(n);}
-  void addConsummer()         {++n_consummers_;}
-  void rmConsummer()          {--n_consummers_;}
+  size_t   size()  override;
+  void     clear() override;
+//   void deepClear() override;
 
 private:
   std::queue<T> queue_;
-  std::atomic_size_t max_size_;
-  std::atomic_int    n_producers_;
-  std::atomic_int    n_consummers_;
+};
 
-  std::mutex mutex_;
-  std::condition_variable cond_empty_;
-  std::condition_variable cond_full_;
+template <typename T>
+class PtrFifo : public Fifo<T> {
+  PtrFifo(std::size_t s=10) : Fifo<T>(s) {};
+  virtual ~PtrFifo();
+
+  PtrFifo(const PtrFifo&)  = delete;  // disable copying
+  PtrFifo(PtrFifo&&) = delete;  // disable moving
+
+  PtrFifo& operator=(const PtrFifo&)  = delete; // disable assignment
+  PtrFifo& operator=(PtrFifo&&) = delete;
+
+  void     clear() override;
 };
 
 #include "Fifo-inl.h"

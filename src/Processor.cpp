@@ -14,28 +14,60 @@
  * along with MAUS.  If not, see <http://www.gnu.org/licenses/>
  */
 
-// C++
-#include <iostream>
-
 // Mic11Api
 #include "Processor.h"
 
-BaseProcessor::BaseProcessor(std::string n)
-: name_(n), processCount_(0), time_spent_(0.) {}
+proc_status_t operator&(proc_status_t a, proc_status_t b) {
+  proc_status_t s;
+  int a_int = static_cast<int>(a);
+  int b_int = static_cast<int>(b);
 
-bool BaseProcessor::process_with_stats() {
+  s = (a_int > b_int)? a : b;
+  return s;
+}
+
+proc_status_t operator&=(proc_status_t &a, proc_status_t b) {
+  a = a & b;
+  return a & b;
+}
+
+std::ostream& operator<<(std::ostream& s, proc_status_t status) {
+  switch (status) {
+    case proc_status_t::OK_s:
+      s << "OK";
+      break;
+
+    case proc_status_t::Interrupt_s:
+      s << "Interrupt";
+      break;
+
+    case proc_status_t::Error_s:
+      s << "Error";
+      break;
+
+    case proc_status_t::FatalError_s:
+      s << "FatalError";
+      break;
+  }
+  return s;
+}
+
+PInterface::PInterface(std::string n)
+: name_(n), process_count_(0), time_spent_(0.) {}
+
+proc_status_t PInterface::process_with_stats() {
   hd_time t0 = GET_TIME;
 
-  bool status = this->process();
+  proc_status_t status = this->process();
 
   time_spent_ += GET_DURATION(t0);
-  ++processCount_;
+  ++process_count_;
 
   return status;
 }
 
-void BaseProcessor::printTimeStats() const {
-  std::cout << name_ << "  -> Average processing time (" << processCount_ << "): "
-            << 1e3*time_spent_ / processCount_ << " ms.\n";
+void PInterface::printTimeStats() const {
+  std::cout << name_ << "  -> Average processing time (" << process_count_ << "): "
+            << 1e3*time_spent_ / process_count_ << " ms.\n";
 }
 

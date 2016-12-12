@@ -15,17 +15,18 @@
  *
  */
 
+#include "Processor.h"
 #include "TestFifo.h"
 
-void TestNFifo::setUp(void) {
+void TestFifo::setUp() {
   mTestObj = new Fifo<int*>(11);
 }
 
-void TestNFifo::tearDown(void) {
+void TestFifo::tearDown() {
   delete mTestObj;
 }
 
-void TestNFifo::testPushPop(void) {
+void TestFifo::testPushPop() {
   for (int i=0; i<10; ++i)
     mTestObj->push(new int(100+i));
 
@@ -40,19 +41,19 @@ void TestNFifo::testPushPop(void) {
   CPPUNIT_ASSERT(mTestObj->size() == 0);
 }
 
-void TestNFifo::testSetGetMaxSize(void) {
+void TestFifo::testSetGetMaxSize() {
   mTestObj->setMaxSize(77);
   int maxSize = mTestObj->getMaxSize();
   CPPUNIT_ASSERT(maxSize == 77);
 }
 
-void TestNFifo::testSetGetNProducers(void) {
+void TestFifo::testSetGetNProducers() {
   mTestObj->setNProducers(22);
   int nPr = mTestObj->getNProducers();
   CPPUNIT_ASSERT(nPr == 22);
 }
 
-void TestNFifo::testAddRmProducer(void) {
+void TestFifo::testAddRmProducer() {
   mTestObj->setNProducers(0);
   for (int i=0; i<44; ++i)
     mTestObj->addProducer();
@@ -67,13 +68,13 @@ void TestNFifo::testAddRmProducer(void) {
   CPPUNIT_ASSERT(nPr == 0);
 }
 
-void TestNFifo::testSetGetNConsummers(void) {
+void TestFifo::testSetGetNConsummers() {
   mTestObj->setNConsummers(22);
   int nPr = mTestObj->getNConsummers();
   CPPUNIT_ASSERT(nPr == 22);
 }
 
-void TestNFifo::testAddRmNConsummers(void) {
+void TestFifo::testAddRmNConsummers() {
   mTestObj->setNConsummers(0);
   for (int i=0; i<44; ++i)
     mTestObj->addConsummer();
@@ -88,20 +89,59 @@ void TestNFifo::testAddRmNConsummers(void) {
   CPPUNIT_ASSERT(nPr == 0);
 }
 
-void TestNFifo::testStopWork(void) {
+void TestFifo::testNode() {
+  Node *n1 = mTestObj;
+  n1->setNConsummers(5);
+  n1->setMaxSize(30);
+  for (int i=0; i<30; ++i)
+    mTestObj->push(new int(100+i));
+
+  CPPUNIT_ASSERT(n1->size() == 30);
+}
+
+void TestFifo::testStopWork() {
   mTestObj->setMaxSize(10);
   CPPUNIT_ASSERT(mTestObj->size() == 0);
 
   mTestObj->setNConsummers(5);
   mTestObj->setNProducers(2);
-  mTestObj->rmProducer();
+  mTestObj->rmActiveProducer(proc_status_t::OK_s);
   CPPUNIT_ASSERT(mTestObj->size() == 0);
-  mTestObj->rmProducer();
+  mTestObj->rmActiveProducer(proc_status_t::OK_s);
   CPPUNIT_ASSERT(mTestObj->size() == 5);
   for (int i=0; i<5; ++i) {
     auto x = mTestObj->pop();
     CPPUNIT_ASSERT (x == nullptr);
     delete x;
+  }
+}
+
+void TestFifo::testError() {
+  CPPUNIT_ASSERT(mTestObj->size() == 0);
+  mTestObj->setNConsummers(4);
+  mTestObj->setNProducers(9);
+
+  mTestObj->consummerError(proc_status_t::Error_s);
+  CPPUNIT_ASSERT(mTestObj->status() == proc_status_t::Error_s);
+  CPPUNIT_ASSERT(mTestObj->getNConsummers() == 4);
+  mTestObj->resetError();
+  CPPUNIT_ASSERT(mTestObj->status() == proc_status_t::OK_s);
+
+  mTestObj->rmActiveProducer(proc_status_t::FatalError_s);
+  CPPUNIT_ASSERT(mTestObj->status() == proc_status_t::FatalError_s);
+  CPPUNIT_ASSERT(mTestObj->getNActiveProducers() == 8);
+  mTestObj->resetError();
+  CPPUNIT_ASSERT(mTestObj->status() == proc_status_t::OK_s);
+
+  CPPUNIT_ASSERT(mTestObj->size() == 0);
+  mTestObj->setNProducers(1);
+  CPPUNIT_ASSERT(mTestObj->getNActiveProducers() == 1);
+  mTestObj->rmActiveProducer(proc_status_t::Error_s);
+  CPPUNIT_ASSERT(mTestObj->size() == 4);
+
+  for (int i=0; i<4; ++i) {
+    int* x = mTestObj->pop();
+    CPPUNIT_ASSERT (x == nullptr);
   }
 }
 

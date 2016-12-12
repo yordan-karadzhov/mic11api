@@ -19,35 +19,45 @@
 
 // C++
 #include <string>
+#include <iostream>
 #include <chrono>
 
-#define GET_TIME std::chrono::high_resolution_clock::now()
-#define GET_DURATION(t0) std::chrono::duration_cast<std::chrono::duration<double>>( \
-std::chrono::high_resolution_clock::now()-t0).count()
+#include "Macros.h"
 
-typedef  std::chrono::high_resolution_clock::time_point  hd_time;
+enum class proc_status_t {
+  OK_s=0,
+  Interrupt_s=1,
+  Error_s=2,
+  FatalError_s=3
+};
 
-///////////////////// BaseProcessor //////////////////////////////////
-class BaseProcessor {
+proc_status_t operator&(proc_status_t a, proc_status_t b);
+proc_status_t operator&=(proc_status_t &a, proc_status_t b);
+std::ostream& operator<<(std::ostream& s, proc_status_t b);
+
+///////////////////// PInterface //////////////////////////////////
+class PInterface {
 public:
-  BaseProcessor() = delete;  // Never use this default constructor!!!
-  BaseProcessor(std::string n);
-  virtual ~BaseProcessor() {}
+  PInterface() = delete;  // Never use this default constructor!!!
+  PInterface(std::string n);
+  virtual ~PInterface() {}
 
-  virtual void init(std::string) =0;
-  virtual bool process() =0;
-  virtual void close() =0;
+//   virtual void init(std::string) =0;
+  virtual void init(std::string, void*) =0;
+  virtual proc_status_t process() =0;
+  virtual void close(proc_status_t st) =0;
 
-  bool process_with_stats();
+  proc_status_t process_with_stats();
 
-  std::string getName() const {return name_;}
-  int getCount()        const {return processCount_;}
+  std::string name() const {return name_;}
+  int getCount()        const {return process_count_;}
+  void resetStats()   {process_count_ = 0, time_spent_ = 0;}
   int getTime()         const {return time_spent_;}
   void printTimeStats() const;
 
 protected:
   std::string name_;
-  int processCount_;
+  int process_count_;
   double time_spent_;
 };
 
@@ -85,33 +95,33 @@ protected:
 
 ///////////////////// InProcessor /////////////////////////////////////
 template <class objOut>
-class InProcessor : public BaseProcessor, public PInput<objOut> {
+class InProcessor : public PInterface, public PInput<objOut> {
 
 public:
   InProcessor() = delete;  // Never use this default constructor!!!
-  InProcessor(std::string n) : BaseProcessor(n), PInput<objOut>() {}
+  InProcessor(std::string n) : PInterface(n), PInput<objOut>() {}
 
   virtual ~InProcessor() {};
 };
 
 ///////////////////// OutProcessor /////////////////////////////////////
 template <class objIn>
-class OutProcessor : public BaseProcessor, public POutput<objIn> {
+class OutProcessor : public PInterface, public POutput<objIn> {
 
 public:
   OutProcessor() = delete;  // Never use this default constructor!!!
-  OutProcessor(std::string n) : BaseProcessor(n), POutput<objIn>() {}
+  OutProcessor(std::string n) : PInterface(n), POutput<objIn>() {}
 
   virtual ~OutProcessor() {};
 };
 
 ///////////////////// InOutProcessor /////////////////////////////////////
 template <class objIn, class objOut>
-class InOutProcessor : public BaseProcessor, public PInput<objOut>, public POutput<objIn> {
+class InOutProcessor : public PInterface, public PInput<objOut>, public POutput<objIn> {
 
 public:
   InOutProcessor() = delete;  // Never use this default constructor!!!
-  InOutProcessor(std::string n) : BaseProcessor(n), PInput<objOut>(), POutput<objIn>() {}
+  InOutProcessor(std::string n) : PInterface(n), PInput<objOut>(), POutput<objIn>() {}
 
   virtual ~InOutProcessor() {};
 };

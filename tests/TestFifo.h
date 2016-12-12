@@ -25,33 +25,37 @@
 // Mic11
 #include "src/Fifo.h"
 
-class TestNFifo  : public CppUnit::TestFixture {
+class TestFifo  : public CppUnit::TestFixture {
 
  public:
-  void setUp(void);
-  void tearDown(void);
+  void setUp();
+  void tearDown();
 
  protected:
-  void testPushPop(void);
-  void testSetGetMaxSize(void);
-  void testSize(void);
-  void testSetGetNProducers(void);
-  void testAddRmProducer(void);
-  void testSetGetNConsummers(void);
-  void testAddRmNConsummers(void);
-  void testStopWork(void);
+  void testPushPop();
+  void testSetGetMaxSize();
+  void testSize();
+  void testSetGetNProducers();
+  void testAddRmProducer();
+  void testSetGetNConsummers();
+  void testAddRmNConsummers();
+  void testNode();
+  void testStopWork();
+  void testError();
 
  private:
   Fifo<int*> *mTestObj;
 
-  CPPUNIT_TEST_SUITE( TestNFifo );
+  CPPUNIT_TEST_SUITE( TestFifo );
   CPPUNIT_TEST( testPushPop );
   CPPUNIT_TEST( testSetGetMaxSize );
   CPPUNIT_TEST( testSetGetNProducers );
   CPPUNIT_TEST( testAddRmProducer );
   CPPUNIT_TEST( testSetGetNConsummers );
   CPPUNIT_TEST( testAddRmNConsummers );
+  CPPUNIT_TEST( testNode );
   CPPUNIT_TEST( testStopWork );
+  CPPUNIT_TEST( testError );
   CPPUNIT_TEST_SUITE_END();
 };
 

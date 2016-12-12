@@ -35,9 +35,9 @@ class tproc_int1 : public InProcessor<int> {
   tproc_int1() : InProcessor<int> ("testProcInt") {}
   ~tproc_int1() {}
 
-  void init(std::string s) {}
-  bool process();
-  void close() {}
+  void init(std::string s, void *arg) {}
+  proc_status_t process();
+  void close(proc_status_t) {}
 };
 
 class twork_int : public UpdateWorker<int> {
@@ -50,16 +50,18 @@ class twork_str : public TransformWorker<int,std::string> {
   twork_str() : TransformWorker("TestWorkerStr", new tproc_str) {}
 };
 
-class TestNWorker : public CppUnit::TestFixture {
+class TestWorker : public CppUnit::TestFixture {
 
  public:
-  void setUp(void);
-  void tearDown(void);
+  void setUp();
+  void tearDown();
 
  protected:
-  void Test1Worker(void);
-  void Test2WorkersSameData(void);
-  void Test2WorkersDiffData(void);
+  void Test1Worker();
+  void Test2WorkersSameData();
+  void Test2WorkersDiffData();
+  void TestStop();
+  void TestError();
 
  private:
   twork_int mTestObj_1;
@@ -67,8 +69,10 @@ class TestNWorker : public CppUnit::TestFixture {
   twork_str mTestObj_3;
   int *inPtr, *outPtr;
 
-  CPPUNIT_TEST_SUITE( TestNWorker );
+  CPPUNIT_TEST_SUITE( TestWorker );
   CPPUNIT_TEST( Test1Worker );
+  CPPUNIT_TEST( TestStop );
+  CPPUNIT_TEST( TestError );
   CPPUNIT_TEST( Test2WorkersSameData );
   CPPUNIT_TEST( Test2WorkersDiffData );
   CPPUNIT_TEST_SUITE_END();
