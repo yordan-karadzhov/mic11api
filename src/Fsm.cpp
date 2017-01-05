@@ -94,35 +94,37 @@ State* StateFactory::newState(fsm_state_t s) {
 
 Fsm::Fsm()
 : factory_(new StateFactory),
-  current_state_(factory_->newState(fsm_state_t::Idle_s)) {
+  current_state_(factory_->newState(fsm_state_t::Idle_s)),
+  time_stats_enable_(false) {
     current_state_->whenEnteringStateDo(this, fsm_state_t::Idle_s);
   }
 
 Fsm::~Fsm() {
   delete factory_;
+  this->dismissWorkers();
 }
 
-void Fsm::start(userInputFunc input_func, int n) {
-  n_iterations_ = n;
-  future_status status;
-  user_input_ = async(launch::async, input_func);
-  while (1) {
-    status = user_input_.wait_for(milliseconds(250));
-    if (status == future_status::ready) {
-      int choice = user_input_.get();
+int Fsm::addWorker(WInterface* w) {
+  workers_.push_back(w);
+  dynamic_workers_.push_back(false);
+  return workers_.size();
+}
 
-      if (choice < 1 || choice > 4) {
-        this->close();
-        exit(EXIT_SUCCESS);
-      }
+void Fsm::dismissWorkers() {
+  for (unsigned int i=0; i< workers_.size(); ++i)
+    if(dynamic_workers_[i])
+      delete workers_[i];
 
-      const fsm_input_t input = static_cast<fsm_input_t>(choice);
-      this->handleInput(input);
-      user_input_ = async(launch::async, input_func);
-    }
+  workers_.resize(0);
+}
 
-    this->handleMonitor();
-  }
+int Fsm::addNode(std::shared_ptr<Node> n) {
+  nodes_.push_back(n);
+  return nodes_.size();
+}
+
+void Fsm::dismissNodes() {
+  nodes_.resize(0);
 }
 
 void Fsm::close() {
@@ -135,10 +137,16 @@ void Fsm::handleInput(fsm_input_t input) {
 
 void Fsm::changeState(fsm_state_t state_id) {
 //   lock_guard<mutex> lock(fsm_mtx_);
-  cout << "   going from " << current_state_->id() << " to " << state_id << endl;
 
-  current_state_->whenLeavingStateDo(this, state_id);
-  auto old_state_id = current_state_->id();
+  fsm_state_t old_state_id;
+  if (current_state_) {
+    current_state_->whenLeavingStateDo(this, state_id);
+    old_state_id  = current_state_->id();
+  } else {
+    old_state_id = fsm_state_t::Undefined_s;
+  }
+
+  cout << "   going from " << old_state_id << " to " << state_id << endl;
   auto new_state = shared_ptr<State>( this->factory_->newState(state_id) );
 //   auto new_state = unique_ptr<State>( this->factory_->newState(state_id) );
   current_state_ = move(new_state);
@@ -160,16 +168,17 @@ void Fsm::startWork() {
 }
 
 void Fsm::stopWork() {
+
   for (auto &w: workers_)
     w->closeInput();
 
   for (auto &n: nodes_)
-    n->clear();
+    n->stop();
 
   this->joinWorkers();
 
-  for (auto &n: nodes_)
-    n->clear();
+//   for (auto &n: nodes_)
+//     n->clear();
 }
 
 void Fsm::joinWorkers() {
@@ -237,6 +246,12 @@ void Fsm::handleMonitor() {
   }
 }
 
+void Fsm::enableStats(bool e) {
+  time_stats_enable_ = e;
+  for(auto &w: workers_)
+    w->enableStats(e);
+}
+
 proc_status_t Fsm::getNodesStatus() {
   proc_status_t st = proc_status_t::OK_s;
   for(auto &n: nodes_)
@@ -253,4 +268,10 @@ proc_status_t Fsm::getWorkersStatus() {
   return st;
 }
 
-
+void Fsm::updateStats() {
+  if (time_stats_enable_) {
+    stats_.resize(0);
+    for (auto &w: workers_)
+      stats_.push_back(w->getStats());
+  }
+}

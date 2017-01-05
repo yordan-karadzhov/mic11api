@@ -38,7 +38,7 @@ class t_input : public InProcessor<int> {
  public:
   t_input(): InProcessor("t_input") {}
 
-  void     init(std::string s, void *arg) override {}
+  void     init() override {}
   proc_status_t process() override;
   void     close(proc_status_t st) override {}
 };
@@ -48,7 +48,7 @@ class t_input : public InProcessor<int> {
 class t_proc_tr : public InOutProcessor<int, std::string> {
  public:
   t_proc_tr() : InOutProcessor("t_proc_tr") {}
-  void     init(std::string s, void *arg) override {}
+  void     init() override {}
   proc_status_t process() override;
   void     close(proc_status_t st) override {}
 };
@@ -58,7 +58,7 @@ class t_proc_tr : public InOutProcessor<int, std::string> {
 class t_output_s : public OutProcessor<std::string> {
  public:
   t_output_s() : OutProcessor("t_output_s") {}
-  void     init(std::string s, void *arg) override {}
+  void     init() override {}
   proc_status_t process() override;
   void     close(proc_status_t st) override {}
 };
@@ -68,7 +68,7 @@ class t_output_s : public OutProcessor<std::string> {
 class t_proc_up : public InProcessor<int> {
  public:
   t_proc_up() : InProcessor("t_proc_up") {}
-  void     init(std::string s, void *arg) override {}
+  void     init() override {}
   proc_status_t process() override;
   void     close(proc_status_t st) override {}
 };
@@ -79,7 +79,7 @@ class t_output_i : public OutProcessor<int> {
  public:
   t_output_i() : OutProcessor("t_output_i") {}
 
-  void     init(std::string s, void *arg) override {}
+  void     init() override {}
   proc_status_t process() override;
   void     close(proc_status_t st) override {}
 };

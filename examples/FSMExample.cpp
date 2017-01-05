@@ -17,14 +17,16 @@
 
 // C++
 #include <sstream>
-#include <thread>
 #include <chrono>
 #include <mutex>
-extern std::mutex mtx;
+std::mutex mtx;
 
 // Mic11
+#include "Fsm.h"
+#include "State.h"
 #include "Worker.h"
 #include "Macros.h"
+#include "GetBackTrace.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -45,43 +47,51 @@ class t_input : public InProcessor<int> {
  public:
   t_input(): InProcessor("t_input") {}
 
-  void init(string s) override {}
-  bool process() override;
-  void close() override {}
+  void     init() override {}
+  proc_status_t process() override;
+  void     close(proc_status_t st) override {}
 };
 
 std::atomic_uint i_count(10);
 
-bool t_input::process() {
+proc_status_t t_input::process() {
 
   /// Simulate some work here.
   **output_ = ++i_count + 220;
   std::this_thread::sleep_for( milliseconds(5) );
+//   if (**output_ == 1255)
+//     return Interrupt_s;
 
-  return true;
+  return proc_status_t::OK_s;
 }
 
 
 /** This processor class is a consumer and producer.
- *  The input data type is int and the output type is string.
+ *  The input data type is int and the output type is int.
  */
 class t_proc : public InProcessor<int> {
  public:
   t_proc() : InProcessor("t_proc") {}
 
-  void init(string s) override {}
-  bool process() override;
-  void close() override {}
+  void     init() override {}
+  proc_status_t process() override;
+  void     close(proc_status_t st) override {}
 };
 
-bool t_proc::process() {
+proc_status_t t_proc::process() {
 
   /// Simulate some work here.
   std::stringstream ss;
   **output_ -= 120;
   std::this_thread::sleep_for( milliseconds(3) );
 
-  return true;
+  if (**output_ == 1255)
+    return proc_status_t::Interrupt_s;
+
+  if (**output_ == 1455)
+    return proc_status_t::Error_s;
+
+  return proc_status_t::OK_s;
 }
 
 
@@ -92,12 +102,12 @@ class t_output : public OutProcessor<int> {
  public:
   t_output() : OutProcessor("t_output") {}
 
-  void init(string s) override {}
-  bool process() override;
-  void close() override {}
+  void     init() override {}
+  proc_status_t process() override;
+  void     close(proc_status_t st) override {}
 };
 
-bool t_output::process() {
+proc_status_t t_output::process() {
 
   /// Simulate some work here.
   std::unique_lock<std::mutex> lck (mtx, std::defer_lock);
@@ -106,8 +116,16 @@ bool t_output::process() {
   lck.unlock();
 
   std::this_thread::sleep_for( milliseconds(6) );
+  if (**input_ == 750)
+    return proc_status_t::Interrupt_s;
 
-  return true;
+  if (**input_ == 1750)
+    return proc_status_t::Error_s;
+
+  if (**input_ == 3000)
+    return proc_status_t::FatalError_s;
+
+  return proc_status_t::OK_s;
 }
 
 /// For each processor, define a worker.
@@ -115,14 +133,34 @@ IMPLEMENT_INPUT(t_input_worker, int, t_input)   // worker name, data type, proce
 
 IMPLEMENT_UWORKER(t_proc_worker, int, t_proc)   // worker name, data type, processor name
 
-IMPLEMENT_OUTPUT(t_outputput_worker, int, t_output)   // worker name, data type, processor name
+IMPLEMENT_OUTPUT(t_output_worker, int, t_output)   // worker name, data type, processor name
+
+class MyStandby : public Standby {
+public:
+  void whenSameStateDo(Fsm *sm) override {
+    cout << "MyStandby::whenSameStateDo\n";
+    for (auto &s: sm->getStats())
+      s.print();
+  }
+};
+
+#define stateMap(STATE) \
+  STATE(DEFAULT_IDLE) \
+  STATE(DEFAULT_FAILURE) \
+  STATE(USER_STANDBY(MyStandby)) \
+  STATE(DEFAULT_ACTIVE) \
+  STATE(DEFAULT_FATALERROR)
+
+IMPLEMENT_STATE_FACTORY(stateMap, MyFactory)
 
 int main(int argc, char* argv[]) {
+
+  SetErrorHdlr();
 
   /// Hire 4 workers.
   t_input_worker  w0(0);
   t_proc_worker   w1(1), w2(2);
-  t_outputput_worker w3(3);
+  t_output_worker w3(3);
 
 
   /**Position the 4 workers.
@@ -147,15 +185,30 @@ int main(int argc, char* argv[]) {
   w2 << w3.getInput();
 //   w1 << ( w2 << w3.getInput() );
 
-  vector<thread> threads;
-  threads.push_back( thread(std::ref(w0), 100) ); // Start the work. 100 iterations.
-//   threads.push_back( thread(std::ref(w0)) ); // Start the work. Run forever.
-  threads.push_back( thread(std::ref(w1)) );
-  threads.push_back( thread(std::ref(w2)) );
-  threads.push_back( thread(std::ref(w3)) );
+  Fsm fsm;
+  fsm.setUserFactory<MyFactory>();
 
-  for (auto &t:threads)
-    t.join();
+  fsm.addWorker(&w0);
+  fsm.addWorker(&w1);
+  fsm.addWorker(&w2);
+  fsm.addWorker(&w3);
+
+  fsm.addNode(w0.getOutput());
+  fsm.addNode(w3.getInput());
+
+  fsm.enableStats();
+
+  auto myInput = [] {
+    this_thread::sleep_for(milliseconds(10));
+    int choice;
+    cout << "Enter 1/2/3/4/>4 (On / Start / Stop / Off / Exit): \n";
+    cin  >> choice;
+
+    return choice;
+  };
+
+//   fsm.start(myInput);
+  fsm.start(myInput, 500);
 
   return 0;
 }

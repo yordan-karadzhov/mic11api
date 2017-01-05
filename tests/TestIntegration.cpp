@@ -51,8 +51,10 @@ proc_status_t t_proc_up::process() {
   std::stringstream ss;
   **output_ -= 120;
   std::this_thread::sleep_for( microseconds(30) );
-  if (**output_ == N + 220)
+  if (**output_ == N + 220) {
+//     std::cerr << "t_proc_up: " << **output_ << std::endl;
     return proc_status_t::Interrupt_s;
+  }
 
   return proc_status_t::OK_s;
 }
@@ -145,7 +147,7 @@ void TestIntegration::TestUpWorkerStop() {
 
   for (auto &w: workers) {
     w->enableStats();
-    w->init("");
+    w->init();
   }
 
   w0 >> w1.getInput();
@@ -167,7 +169,7 @@ void TestIntegration::TestUpWorkerStop() {
   for (auto &t:threads)
     t.join();
 
-//   std::cout << " " << w0.getCount() << " " << w1.getCount() << " "
+//   std::cout << "1 " << w0.getCount() << " " << w1.getCount() << " "
 //             << w2.getCount() << " " << w3.getCount() << std::endl;
 //   std::cout << "fifos: " << n0->size() << " " << n1->size() << std::endl;
 
@@ -187,10 +189,10 @@ void TestIntegration::TestUpWorkerStop() {
 
   init_v = N + 100;
   for (auto &w: workers)
-    w->init("");
+    w->init();
 
-  n0->resetError();
-  n1->resetError();
+  n0->reset();
+  n1->reset();
 
   threads.resize(0);
   threads.push_back( thread(std::ref(w0), 50) );
@@ -201,7 +203,7 @@ void TestIntegration::TestUpWorkerStop() {
   for (auto &t:threads)
     t.join();
 
-//   std::cout << " " << w0.getCount() << " " << w1.getCount() << " "
+//   std::cout << "2 " << w0.getCount() << " " << w1.getCount() << " "
 //             << w2.getCount() << " " << w3.getCount() << std::endl;
 //   std::cout << "fifos: " << n0->size() << " " << n1->size() << std::endl;
 
@@ -220,10 +222,10 @@ void TestIntegration::TestUpWorkerStop() {
 
   init_v = N + 175;
   for (auto &w: workers)
-    w->init("");
+    w->init();
 
-  n0->resetError();
-  n1->resetError();
+  n0->reset();
+  n1->reset();
 
   threads.resize(0);
   threads.push_back( thread(std::ref(w0), 50) );
@@ -234,9 +236,9 @@ void TestIntegration::TestUpWorkerStop() {
   for (auto &t:threads)
     t.join();
 
-  std::cout << " " << w0.getCount() << " " << w1.getCount() << " "
-            << w2.getCount() << " " << w3.getCount() << std::endl;
-  std::cout << "fifos: " << n0->size() << " " << n1->size() << std::endl;
+//   std::cout << "3 " << w0.getCount() << " " << w1.getCount() << " "
+//             << w2.getCount() << " " << w3.getCount() << std::endl;
+//   std::cout << "fifos: " << n0->size() << " " << n1->size() << std::endl;
 
   CPPUNIT_ASSERT( w0.status() == proc_status_t::Interrupt_s);
   CPPUNIT_ASSERT( w1.status() == proc_status_t::OK_s);
@@ -266,7 +268,7 @@ void TestIntegration::TestTrWorkerError() {
 
   for (auto &w: workers) {
     w->enableStats();
-    w->init("");
+    w->init();
   }
 
   w0 >> w1.getInput();
@@ -308,10 +310,10 @@ void TestIntegration::TestTrWorkerError() {
 
   init_v = N + 100;
   for (auto &w: workers)
-    w->init("");
+    w->init();
 
-  n0->resetError();
-  n1->resetError();
+  n0->reset();
+  n1->reset();
 
   threads.resize(0);
   threads.push_back( thread(std::ref(w0), 50) ); // Start the work. 100 iterations.
@@ -322,9 +324,9 @@ void TestIntegration::TestTrWorkerError() {
   for (auto &t:threads)
     t.join();
 
-  std::cout << " " << w0.getCount() << " " << w1.getCount() << " "
-            << w2.getCount() << " " << w3.getCount() << std::endl;
-  std::cout << "fifos: " << n0->size() << " " << n1->size() << std::endl;
+//   std::cout << " " << w0.getCount() << " " << w1.getCount() << " "
+//             << w2.getCount() << " " << w3.getCount() << std::endl;
+//   std::cout << "fifos: " << n0->size() << " " << n1->size() << std::endl;
 
   CPPUNIT_ASSERT( w0.status() == proc_status_t::Interrupt_s);
   CPPUNIT_ASSERT( (w1.status() == proc_status_t::OK_s && w2.status() == proc_status_t::Error_s) ||
@@ -342,10 +344,10 @@ void TestIntegration::TestTrWorkerError() {
 
   init_v = N + 100;
   for (auto &w: workers)
-    w->init("");
+    w->init();
 
-  n0->resetError();
-  n1->resetError();
+  n0->reset();
+  n1->reset();
 
   threads.resize(0);
   threads.push_back( thread(std::ref(w0), 150) );

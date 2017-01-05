@@ -35,7 +35,7 @@ class tproc_int1 : public InProcessor<int> {
   tproc_int1() : InProcessor<int> ("testProcInt") {}
   ~tproc_int1() {}
 
-  void init(std::string s, void *arg) {}
+  void init() {}
   proc_status_t process();
   void close(proc_status_t) {}
 };

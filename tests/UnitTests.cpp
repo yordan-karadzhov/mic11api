@@ -35,6 +35,7 @@
 #include "tests/TestWorker.h"
 #include "tests/TestMacros.h"
 #include "tests/TestIntegration.h"
+#include "tests/GetBackTrace.h"
 
 CPPUNIT_TEST_SUITE_REGISTRATION(TestFsm);
 CPPUNIT_TEST_SUITE_REGISTRATION(TestIntegration);
@@ -45,6 +46,7 @@ CPPUNIT_TEST_SUITE_REGISTRATION(TestMacros);
 
 int main(int argc, char* argv[]) {
   using namespace CppUnit;
+//   SetErrorHdlr();
 
   // Informs test-listener about testresults.
   CPPUNIT_NS::TestResult testresult;

@@ -45,7 +45,7 @@ class t_input : public InProcessor<int> {
  public:
   t_input(): InProcessor("t_input") {}
 
-  void     init(string s, void *arg) override {}
+  void     init() override {}
   proc_status_t process() override;
   void     close(proc_status_t st) override {}
 };
@@ -69,7 +69,7 @@ class t_proc : public InProcessor<int> {
  public:
   t_proc() : InProcessor("t_proc") {}
 
-  void     init(string s, void *arg) override {}
+  void     init() override {}
   proc_status_t process() override;
   void     close(proc_status_t st) override {}
 };
@@ -92,7 +92,7 @@ class t_output : public OutProcessor<int> {
  public:
   t_output() : OutProcessor("t_output") {}
 
-  void     init(string s, void *arg) override {}
+  void     init() override {}
   proc_status_t process() override;
   void     close(proc_status_t st) override {}
 };

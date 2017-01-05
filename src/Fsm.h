@@ -52,29 +52,42 @@ public:
   virtual State* newState(fsm_state_t s);
 };
 
-typedef int(*userInputFunc)(void);
+// typedef int(*inputFunc_t)(void);
 
 class Fsm {
 public:
   Fsm();
   virtual ~Fsm();
 
-  template<typename F>
-  void setUserFactory() {
-    delete factory_;
-    factory_ = new F;
-    this->changeState(fsm_state_t::Idle_s);
-  }
+  template<typename factoryType>
+  void setUserFactory();
 
-  void start(userInputFunc input_func, int n=0);
+  template<typename T>
+  void start(T input_func, int n=0);
+
+  template<typename workerType>
+  workerType* addWorker();
+
+  template<typename workerType>
+  workerType* getWorker(int i);
+
+  int  addWorker(WInterface *w);
+
+  void dismissWorkers();
+
+  int  addNode(std::shared_ptr<Node> n);
+  void dismissNodes();
+
   void changeState( fsm_state_t state_id );
 
   void handleInput(fsm_input_t input); // delegate input handling to 'state'.
   void handleMonitor();
 
   fsm_state_t stateId();
-  std::vector<WInterface*>&   getWorkers() { return workers_;}
-  std::vector<Node*>&         getNodes()   { return nodes_;}
+  std::vector<WInterface*>                getWorkers() { return workers_;}
+  std::vector< std::shared_ptr<Node> >    getNodes()   { return nodes_;}
+  std::vector<WStats>&                    getStats()   { return stats_;}
+  size_t getNThreads()  {return threads_.size();}
 
   void startWork();
   void stopWork();
@@ -86,19 +99,72 @@ public:
   proc_status_t getNodesStatus();
   proc_status_t getWorkersStatus();
 
+  void enableStats(bool e=true);
+  void updateStats();
+
 private:
   StateFactory *factory_;
   std::shared_ptr<State>    current_state_;
 //   std::unique_ptr<State>    current_state_;
   std::vector<WInterface*>  workers_;
-  std::vector<Node*>        nodes_;
+  std::vector<bool>         dynamic_workers_;
+
+  std::vector< std::shared_ptr<Node> >  nodes_;
   std::vector<std::thread>  threads_;
 
   std::future<int>          user_input_;
   int n_iterations_;
+  bool time_stats_enable_;
+  std::vector<WStats> stats_;
 //   std::mutex fsm_mtx_;
 };
 
+template<typename factoryType>
+void Fsm::setUserFactory() {
+  delete factory_;
+  current_state_ = std::shared_ptr<State>(nullptr);
+  factory_ = new factoryType;
+  this->changeState(fsm_state_t::Idle_s);
+}
+
+template<typename T>
+void Fsm::start(T input_func, int n) {
+  n_iterations_ = n;
+  std::future_status status;
+  user_input_ = std::async(std::launch::async, input_func);
+  while (1) {
+    status = user_input_.wait_for(std::chrono::milliseconds(250));
+    if (status == std::future_status::ready) {
+      int choice = user_input_.get();
+
+      if (choice < 1 || choice > 4) {
+        this->close();
+        return;
+      }
+
+      const fsm_input_t input = static_cast<fsm_input_t>(choice);
+      this->handleInput(input);
+      user_input_ = async(std::launch::async, input_func);
+    }
+
+    this->handleMonitor();
+  }
+}
+
+template<typename workerType>
+workerType* Fsm::addWorker() {
+  unsigned int nWorkers = workers_.size();
+  workerType *newWorker = new workerType(nWorkers);
+  workers_.push_back(newWorker);
+  dynamic_workers_.push_back(true);
+
+  return newWorker;
+}
+
+template<typename workerType>
+workerType* Fsm::getWorker(int i) {
+  return dynamic_cast<workerType*>(workers_[i]);
+}
 
 #endif
 

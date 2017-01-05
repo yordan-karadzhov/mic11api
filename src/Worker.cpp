@@ -23,15 +23,15 @@ WInterface::WInterface(std::string n, PInterface *p, int id)
 : processor_(p), status_(proc_status_t::OK_s), name_(n), id_(id),
   time_stats_enable_(false), input_closed_(false) {}
 
-void WInterface::init(std::string s, void *arg) {
+void WInterface::init() {
   if (processor_) {
     std::lock_guard<std::mutex> lock(w_mtx);
     input_closed_ = false;
     processor_->resetStats();
     status_ = proc_status_t::OK_s;
-    processor_->init(s, arg);
-    std::cout << "\n" << this->name() << " (id "
-              << this->id() <<  ") is ready to start.\n";
+    processor_->init();
+//     std::cout << "\n" << this->name() << " (id "
+//               << this->id() <<  ") is ready to start.\n";
   }
 }
 
@@ -60,50 +60,67 @@ WStats WInterface::getStats() const {
   return s;
 }
 
+void WStats::print() {
+  std::cout << "\n++++++++++++ " << this->worker_name_ << " Id:" 
+            << this->id_ << " ++++++++++++\n";
+  std::cout << this->processor_name_ << "  -> Average processing time ("
+            << this->process_count_ << "): "
+            << 1e3*this->time_spent_ / this->process_count_ << " ms.\n\n";
+}
+
 void WInterface::printStats() const {
   std::cout << "\n++++++++++++ " << this->name() << " Id:" 
-            << this->id() << " ++++++++++++\n\n";
+            << this->id() << " ++++++++++++\n";
 
   processor_->printTimeStats();
+  std::cout << "\n";
 }
 
 void WInterface::printGooodBy() {
-  std::lock_guard<std::mutex> lock(w_mtx);
-
-  if (status_ == proc_status_t::OK_s) {
-    std::cout << "\n" << this->name() << " (id "
-              << this->id() <<  "): jobe done.\n";
-  } else if (status_ == proc_status_t::Interrupt_s) {
-    std::cout << "\n" << this->name() << " (id "
-              << this->id() <<  "): jobe interrupted!\n";
-  } else {
-    std::cout << "\n" << this->name() << " (id "
-              << this->id() <<  "): job terminated with error!\n";
-  }
+//   std::lock_guard<std::mutex> lock(w_mtx);
+// 
+//   switch (status_) {
+//     case proc_status_t::OK_s :
+//       std::cout << "\n" << this->name() << " (id "
+//                 << this->id() <<  "): jobe done.\n";
+//       break;
+// 
+//     case proc_status_t::Interrupt_s :
+//       std::cout << "\n" << this->name() << " (id "
+//                 << this->id() <<  "): jobe interrupted!\n";
+//       break;
+// 
+//     case proc_status_t::Error_s :
+//       std::cout << "\n" << this->name() << " (id "
+//                 << this->id() <<  "): job terminated with error!\n";
+//       break;
+// 
+//     default :
+//       std::cout << "\n" << this->name() << " (id "
+//                 << this->id() <<  "): job terminated with fatal error!\n";
+//   }
 }
 
 void WInterface::start(int n) {
 
   int i=0;
   while(1) {
-    if( !this->pull()) {
-      this->stop();
-      return;
-    }
-
-    status_ = this->process();
-    if(status_ != proc_status_t::OK_s) {
-      this->stop();
-      return;
-    }
-
-    this->push();
-    ++i;
-
     if (i >= n && n != 0) {
       status_ = proc_status_t::Interrupt_s;
       break;
     }
+
+    if( !this->pull()) {
+      break;
+    }
+
+    status_ = this->process();
+    if(status_ != proc_status_t::OK_s) {
+      break;
+    }
+
+    this->push();
+    ++i;
   }
 
   this->stop();

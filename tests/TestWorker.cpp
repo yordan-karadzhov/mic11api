@@ -49,7 +49,7 @@ void TestWorker::Test1Worker() {
   fifo_ptr->push(nullptr);
   CPPUNIT_ASSERT(mTestObj_1.getInFifoPtr()->size() == 11);
 
-  mTestObj_1.init("");
+  mTestObj_1.init();
   mTestObj_1.start();
 
   CPPUNIT_ASSERT(mTestObj_1.getCount() == 10);
@@ -78,8 +78,8 @@ void TestWorker::Test2WorkersSameData() {
   CPPUNIT_ASSERT(mTestObj_1.getInFifoPtr()->size() == NPROC+1);
   CPPUNIT_ASSERT(mTestObj_1.getOutFifoPtr()->size() == 0);
 
-  mTestObj_1.init("");
-  mTestObj_2.init("");
+  mTestObj_1.init();
+  mTestObj_2.init();
   mTestObj_1.start();
 
   CPPUNIT_ASSERT(mTestObj_1.getCount() == NPROC);
@@ -118,8 +118,8 @@ void TestWorker::Test2WorkersDiffData() {
   CPPUNIT_ASSERT(mTestObj_1.getInFifoPtr()->size() == NPROC+1);
   CPPUNIT_ASSERT(mTestObj_1.getOutFifoPtr()->size() == 0);
 
-  mTestObj_1.init("");
-  mTestObj_3.init("");
+  mTestObj_1.init();
+  mTestObj_3.init();
 
   mTestObj_1.start();
 
@@ -155,7 +155,7 @@ void TestWorker::TestStop() {
   CPPUNIT_ASSERT(fifo_in_ptr->size() == 11);
   CPPUNIT_ASSERT(fifo_out_ptr->size() == 0);
 
-  mTestObj_1.init("");
+  mTestObj_1.init();
   mTestObj_1.start();
   CPPUNIT_ASSERT(fifo_in_ptr->size() == 7);
   CPPUNIT_ASSERT(fifo_out_ptr->size() == 3);
@@ -181,7 +181,7 @@ void TestWorker::TestError() {
   CPPUNIT_ASSERT(fifo_in_ptr->size() == 11);
   CPPUNIT_ASSERT(fifo_out_ptr->size() == 0);
 
-  mTestObj_1.init("");
+  mTestObj_1.init();
   mTestObj_1.start();
 
   CPPUNIT_ASSERT(fifo_in_ptr->size() == 4);

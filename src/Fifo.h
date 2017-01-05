@@ -51,9 +51,14 @@ public:
   int  getNActiveProducers() const;
   void resetActiveProducers();
 
-  virtual size_t   size() =0;
-  virtual void     clear() =0;
-//   virtual void deepClear() =0;
+  void reset() {
+    this->resetError();
+    this->resetActiveProducers();
+  }
+
+  virtual size_t  size() =0;
+  virtual void    clear() =0;
+  virtual void    stop() =0;
 
   size_t  getMaxSize() const;
   void    setMaxSize(size_t ms);
@@ -87,19 +92,18 @@ public:
 
   void rmActiveProducer(proc_status_t e);
 
-  void stop();
+  size_t         size()  override;
+  virtual void   clear() override;
+  virtual void   stop()  override {};
 
-  size_t   size()  override;
-  void     clear() override;
-//   void deepClear() override;
-
-private:
+protected:
   std::queue<T> queue_;
 };
 
 template <typename T>
 class PtrFifo : public Fifo<T> {
-  PtrFifo(std::size_t s=10) : Fifo<T>(s) {};
+public:
+  PtrFifo(std::size_t s=10) : Fifo<T>(s) {}
   virtual ~PtrFifo();
 
   PtrFifo(const PtrFifo&)  = delete;  // disable copying
@@ -108,7 +112,8 @@ class PtrFifo : public Fifo<T> {
   PtrFifo& operator=(const PtrFifo&)  = delete; // disable assignment
   PtrFifo& operator=(PtrFifo&&) = delete;
 
-  void     clear() override;
+  void  clear() override;
+  void  stop() override;
 };
 
 #include "Fifo-inl.h"

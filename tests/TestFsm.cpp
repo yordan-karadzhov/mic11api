@@ -18,70 +18,79 @@
 #include "tests/TestFsm.h"
 #include "tests/TestWorker.h"
 
-void TestFsm::setUp() {}
+void TestFsm::setUp() {
+  w0 = new t5_input_worker(0);
+  w1 = new t5_proc_worker(1);
+  w2 = new t5_proc_worker(2);
+  w3 = new t5_output_worker(3);
+}
 
-void TestFsm::tearDown() {}
+void TestFsm::tearDown() {
+  delete w0;
+  delete w1;
+  delete w2;
+  delete w3;
+}
 
 void TestFsm::TestGetWorkers() {
   twork_int w0, w1, w2, w3;
 
-  testObj_.getWorkers().push_back(&w0);
-  testObj_.getWorkers().push_back(&w1);
-  testObj_.getWorkers().push_back(&w2);
-  testObj_.getWorkers().push_back(&w3);
+  testObj_.addWorker(&w0);
+  testObj_.addWorker(&w1);
+  testObj_.addWorker(&w2);
+  testObj_.addWorker(&w3);
 
   CPPUNIT_ASSERT(testObj_.getWorkers().size() == 4);
 }
 
 void TestFsm::TestGetNodes() {
-  Fifo<int> n0, n1, n2, n3;
+  std::shared_ptr< Fifo<int> > n0(new Fifo<int>), n1(new Fifo<int>), n2(new Fifo<int>), n3(new Fifo<int>);
 
-  testObj_.getNodes().push_back(&n0);
-  testObj_.getNodes().push_back(&n1);
-  testObj_.getNodes().push_back(&n2);
-  testObj_.getNodes().push_back(&n3);
+  testObj_.addNode(n0);
+  testObj_.addNode(n1);
+  testObj_.addNode(n2);
+  testObj_.addNode(n3);
 
   CPPUNIT_ASSERT(testObj_.getNodes().size() == 4);
 }
 
 void TestFsm::TestGetStatus() {
-  twork_int w0, w1, w2, w3;
-  testObj_.getWorkers().push_back(&w0);
-  testObj_.getWorkers().push_back(&w1);
-  testObj_.getWorkers().push_back(&w2);
-  testObj_.getWorkers().push_back(&w3);
+  testObj_.addWorker(w0);
+  testObj_.addWorker(w1);
+  testObj_.addWorker(w2);
+  testObj_.addWorker(w3);
 
-  w0.setStatus(proc_status_t::OK_s);
-  w1.setStatus(proc_status_t::Interrupt_s);
-  w2.setStatus(proc_status_t::OK_s);
-  w3.setStatus(proc_status_t::OK_s);
+  w0->setStatus(proc_status_t::OK_s);
+  w1->setStatus(proc_status_t::Interrupt_s);
+  w2->setStatus(proc_status_t::OK_s);
+  w3->setStatus(proc_status_t::OK_s);
 
   CPPUNIT_ASSERT(testObj_.getWorkersStatus() == proc_status_t::Interrupt_s);
 
-  w2.setStatus(proc_status_t::Error_s);
+  w2->setStatus(proc_status_t::Error_s);
   CPPUNIT_ASSERT(testObj_.getWorkersStatus() == proc_status_t::Error_s);
 
-  w0.setStatus(proc_status_t::FatalError_s);
+  w0->setStatus(proc_status_t::FatalError_s);
   CPPUNIT_ASSERT(testObj_.getWorkersStatus() == proc_status_t::FatalError_s);
 
-  Fifo<int> n0, n1, n2, n3;
+  std::shared_ptr< Fifo<int> > n0(new Fifo<int>), n1(new Fifo<int>), n2(new Fifo<int>), n3(new Fifo<int>);;
 
-  testObj_.getNodes().push_back(&n0);
-  testObj_.getNodes().push_back(&n1);
-  testObj_.getNodes().push_back(&n2);
-  testObj_.getNodes().push_back(&n3);
+  testObj_.addNode(n0);
+  testObj_.addNode(n1);
+  testObj_.addNode(n2);
+  testObj_.addNode(n3);
 
-  n0.setStatus(proc_status_t::OK_s);
-  n1.setStatus(proc_status_t::Interrupt_s);
-  n2.setStatus(proc_status_t::OK_s);
-  n3.setStatus(proc_status_t::OK_s);
+  n0->setStatus(proc_status_t::OK_s);
+  n1->setStatus(proc_status_t::Interrupt_s);
+  n2->setStatus(proc_status_t::OK_s);
+  n3->setStatus(proc_status_t::OK_s);
 
   CPPUNIT_ASSERT(testObj_.getNodesStatus() == proc_status_t::Interrupt_s);
 
-  n2.setStatus(proc_status_t::Error_s);
+  n2->setStatus(proc_status_t::Error_s);
   CPPUNIT_ASSERT(testObj_.getNodesStatus() == proc_status_t::Error_s);
 
-  n0.setStatus(proc_status_t::FatalError_s);
+  n0->setStatus(proc_status_t::FatalError_s);
   CPPUNIT_ASSERT(testObj_.getNodesStatus() == proc_status_t::FatalError_s);
 }
 
@@ -240,20 +249,17 @@ void TestFsm::TestUserStates() {
 #include <mutex>
 using namespace std::chrono;
 std::mutex mtx;
+int i_count = 0;
 
-class t5_input : public InProcessor<int> {
- public:
-  t5_input(): InProcessor("t5_input") {}
-  void init(std::string s, void*) override {}
-  proc_status_t process() override;
-  void close(proc_status_t st) override {}
-};
+int output_interrupt_count = 0;
+int proc_interrupt_count = 0;
 
-std::atomic_uint i_count(10);
+int error_count = 0;
+int fatal_count = 0;
 
 proc_status_t t5_input::process() {
   **output_ = ++i_count + 220;
-  std::this_thread::sleep_for( milliseconds(5) );
+  std::this_thread::sleep_for( microseconds(45) );
 //   if (**output_ == 1255)
 //     return Interrupt_s;
 
@@ -261,29 +267,19 @@ proc_status_t t5_input::process() {
 }
 
 
-class t5_proc : public InProcessor<int> {
- public:
-  t5_proc() : InProcessor("t5_proc") {}
-  void init(std::string s, void*) override {}
-  proc_status_t process() override;
-  void close(proc_status_t st) override {}
-};
-
 proc_status_t t5_proc::process() {
   std::stringstream ss;
   **output_ -= 120;
-  std::this_thread::sleep_for( milliseconds(3) );
+  std::this_thread::sleep_for( microseconds(27) );
+  if (**output_ == proc_interrupt_count)
+    return proc_status_t::Interrupt_s;
+
+  if (**output_ == error_count)
+    return proc_status_t::Error_s;
 
   return proc_status_t::OK_s;
 }
 
-class t5_output : public OutProcessor<int> {
- public:
-  t5_output() : OutProcessor("t5_output") {}
-  void init(std::string s, void*) override {}
-  proc_status_t process() override;
-  void close(proc_status_t st) override {}
-};
 
 proc_status_t t5_output::process() {
 //   std::unique_lock<std::mutex> lck (mtx, std::defer_lock);
@@ -291,83 +287,273 @@ proc_status_t t5_output::process() {
 //   std::cout << "output: " << **input_ << std::endl;
 //   lck.unlock();
 
-  std::this_thread::sleep_for( milliseconds(6) );
-  if (**input_ == 1750)
+  std::this_thread::sleep_for( microseconds(61) );
+  if (**input_ == output_interrupt_count)
     return proc_status_t::Interrupt_s;
 
-  if (**input_ == 2750)
-    return proc_status_t::Error_s;
 
-  if (**input_ == 4000)
+  if (**input_ == fatal_count)
     return proc_status_t::FatalError_s;
 
   return proc_status_t::OK_s;
 }
 
-IMPLEMENT_INPUT(t5_input_worker, int, t5_input)   // worker name, data type, proce name
-IMPLEMENT_UWORKER(t5_proc_worker, int, t5_proc)
-IMPLEMENT_OUTPUT(t5_output_worker, int, t5_output)
 
 int input_count=0;
-Fsm fsm;
-t5_input_worker  w0(0);
-t5_proc_worker   w1(1), w2(2);
-t5_output_worker w3(3);
-
-int getTestInput() {
-//   cout << "Enter 1/2/3/4/>4 (On / Start / Stop / Off / Exit): \n";
-  
-  switch (input_count) {
-    case 0:
-      std::this_thread::sleep_for(milliseconds(10));
-      input_count++;
-      std::cout << "\ninput: " << 2 << std::endl;
-      return 2;
-
-    case 1:
-      std::this_thread::sleep_for(seconds(3));
-      std::cout << fsm.stateId() << " " << w0.getCount() << std::endl;
-      w0.printStats();
-      w1.printStats();
-      w2.printStats();
-      w3.printStats();
-      input_count++;
-      std::cout << "\ninput: " << 6 << std::endl;
-      return 6;
-
-    default:
-      std::this_thread::sleep_for(seconds(2));
-      std::cout << fsm.stateId() << " " << w0.getCount() << std::endl;
-      input_count++;
-      std::cout << "\ninput: " << 6 << std::endl;
-      return 6;
-  }
-}
 
 void TestFsm::TestStop() {
-  w0 >> w1.getInput();
-  w0 >> w2.getInput();
-  w1 << w3.getInput();
-  w2 << w3.getInput();
 
-  w0.enableStats();
-  w1.enableStats();
-  w2.enableStats();
-  w3.enableStats();
+  testObj_.changeState(fsm_state_t::Idle_s);
 
-  fsm.getWorkers().push_back(&w0);
-  fsm.getWorkers().push_back(&w1);
-  fsm.getWorkers().push_back(&w2);
-  fsm.getWorkers().push_back(&w3);
+  input_count=0;
+  i_count = 0;
 
-  fsm.getNodes().push_back(w0.getOutput().get());
-  fsm.getNodes().push_back(w3.getInput().get());
+  output_interrupt_count = 0;
+  proc_interrupt_count = 0;
 
-//   fsm.start(&getTestInput, 1000);
+  error_count = 0;
+  fatal_count = 0;
 
+  *w0 >> w1->getInput();
+  *w0 >> w2->getInput();
+  *w1 << w3->getInput();
+  *w2 << w3->getInput();
 
+  testObj_.enableStats(true);
+  w0->enableStats();
+  w1->enableStats();
+  w2->enableStats();
+  w3->enableStats();
+
+  testObj_.addWorker(w0);
+  testObj_.addWorker(w1);
+  testObj_.addWorker(w2);
+  testObj_.addWorker(w3);
+
+  testObj_.addNode(w0->getOutput());
+  testObj_.addNode(w3->getInput());
+
+  auto input = [&] {
+    switch (input_count) {
+      case 0:
+        std::this_thread::sleep_for(milliseconds(100));
+        CPPUNIT_ASSERT( testObj_.stateId() == fsm_state_t::Idle_s);
+        input_count++;
+        output_interrupt_count = 0;
+        std::cout << "\ninput (10ms): " << 2 << std::endl;
+        return 2;
+
+      case 1:
+        std::this_thread::sleep_for(milliseconds(2000));
+        CPPUNIT_ASSERT( testObj_.stateId() == fsm_state_t::Standby_s);
+        CPPUNIT_ASSERT( testObj_.getNThreads() == 0);
+        CPPUNIT_ASSERT( w0->status() == proc_status_t::OK_s);
+        CPPUNIT_ASSERT( w1->status() == proc_status_t::OK_s);
+        CPPUNIT_ASSERT( w2->status() == proc_status_t::OK_s);
+        CPPUNIT_ASSERT( w3->status() == proc_status_t::OK_s);
+
+        CPPUNIT_ASSERT( w0->getOutput()->getNActiveProducers() == 1);
+        CPPUNIT_ASSERT( w1->getOutput()->getNActiveProducers() == 2);
+
+        CPPUNIT_ASSERT( w0->getOutput()->status() == proc_status_t::OK_s);
+        CPPUNIT_ASSERT( w3->getInput()->status() == proc_status_t::OK_s);
+
+        CPPUNIT_ASSERT( testObj_.getStats()[0].process_count_ == 10000);
+        CPPUNIT_ASSERT( testObj_.getStats()[3].process_count_ == 10000);
+
+        input_count++;
+        i_count = 0;
+        proc_interrupt_count = 400;
+        std::cout << "\ninput: " << 2 << std::endl;
+        return 2;
+
+      case 2:
+        std::this_thread::sleep_for(milliseconds(400));
+        CPPUNIT_ASSERT( testObj_.stateId() == fsm_state_t::Standby_s);
+        CPPUNIT_ASSERT( testObj_.getNThreads() == 0);
+        CPPUNIT_ASSERT( w0->status() == proc_status_t::OK_s);
+        CPPUNIT_ASSERT( w1->status() == proc_status_t::OK_s);
+        CPPUNIT_ASSERT( w2->status() == proc_status_t::OK_s);
+        CPPUNIT_ASSERT( w3->status() == proc_status_t::OK_s);
+
+        CPPUNIT_ASSERT( w0->getOutput()->getNActiveProducers() == 1);
+        CPPUNIT_ASSERT( w1->getOutput()->getNActiveProducers() == 2);
+
+        CPPUNIT_ASSERT( w0->getOutput()->status() == proc_status_t::OK_s);
+        CPPUNIT_ASSERT( w3->getInput()->status() == proc_status_t::OK_s);
+
+//         std::cout << "w0 " << testObj_.getStats()[0].process_count_
+//                   << "\nw1 " << testObj_.getStats()[1].process_count_
+//                   << "\nw2 " << testObj_.getStats()[2].process_count_
+//                   << "\nw3 " << testObj_.getStats()[3].process_count_ << std::endl;
+
+        {
+          int in_c = testObj_.getStats()[0].process_count_;
+          int p1_c = testObj_.getStats()[1].process_count_;
+          int p2_c = testObj_.getStats()[2].process_count_;
+          int out_c = testObj_.getStats()[3].process_count_;
+          CPPUNIT_ASSERT ( (in_c - p1_c - p2_c) >= 0);
+          CPPUNIT_ASSERT ( (p1_c + p2_c - out_c) >= 0);
+        }
+
+        input_count++;
+        i_count = 0;
+        output_interrupt_count = 800;
+                proc_interrupt_count = 0;
+        std::cout << "\ninput: " << 2 << std::endl;
+        return 2;
+
+      case 3:
+        std::this_thread::sleep_for(milliseconds(800));
+        CPPUNIT_ASSERT( testObj_.stateId() == fsm_state_t::Standby_s);
+        CPPUNIT_ASSERT( testObj_.getNThreads() == 0);
+        CPPUNIT_ASSERT( w0->status() == proc_status_t::OK_s);
+        CPPUNIT_ASSERT( w1->status() == proc_status_t::OK_s);
+        CPPUNIT_ASSERT( w2->status() == proc_status_t::OK_s);
+        CPPUNIT_ASSERT( w3->status() == proc_status_t::OK_s);
+
+        CPPUNIT_ASSERT( w0->getOutput()->getNActiveProducers() == 1);
+        CPPUNIT_ASSERT( w1->getOutput()->getNActiveProducers() == 2);
+
+        CPPUNIT_ASSERT( w0->getOutput()->status() == proc_status_t::OK_s);
+        CPPUNIT_ASSERT( w3->getInput()->status() == proc_status_t::OK_s);
+
+//         std::cout << i_count << " &&& " << o_count << std::endl;
+//         CPPUNIT_ASSERT( i_count == 1000);
+        CPPUNIT_ASSERT( testObj_.getStats()[3].process_count_ == 700);
+
+        input_count++;
+
+        std::cout << "\ninput: " << 2 << std::endl;
+        return 2;
+
+      case 4 :
+        std::this_thread::sleep_for(milliseconds(300));
+        input_count++;
+
+        std::cout << "\ninput: " << 3 << std::endl;
+        return 3;
+
+      default:
+        CPPUNIT_ASSERT( testObj_.stateId() == fsm_state_t::Standby_s);
+        CPPUNIT_ASSERT( testObj_.getNThreads() == 0);
+        CPPUNIT_ASSERT( w0->status() == proc_status_t::OK_s);
+        CPPUNIT_ASSERT( w1->status() == proc_status_t::OK_s);
+        CPPUNIT_ASSERT( w2->status() == proc_status_t::OK_s);
+        CPPUNIT_ASSERT( w3->status() == proc_status_t::OK_s);
+
+        CPPUNIT_ASSERT( w0->getOutput()->getNActiveProducers() == 1);
+        CPPUNIT_ASSERT( w1->getOutput()->getNActiveProducers() == 2);
+
+        CPPUNIT_ASSERT( w0->getOutput()->status() == proc_status_t::OK_s);
+        CPPUNIT_ASSERT( w3->getInput()->status() == proc_status_t::OK_s);
+
+        std::cout << "\ninput " << 6 << std::endl;
+        return 6;
+    }
+  };
+
+  testObj_.start(input, 10000);
+  CPPUNIT_ASSERT( testObj_.stateId() == fsm_state_t::Idle_s);
+  testObj_.dismissWorkers();
+  testObj_.dismissNodes();
 }
 
 void TestFsm::TestError() {
-  
+  testObj_.changeState(fsm_state_t::Idle_s);
+
+  input_count=0;
+  i_count = 0;
+
+  output_interrupt_count = 0;
+  proc_interrupt_count = 0;
+
+  error_count = 0;
+  fatal_count = 0;
+
+  *w0 >> w1->getInput();
+  *w0 >> w2->getInput();
+  *w1 << w3->getInput();
+  *w2 << w3->getInput();
+
+  testObj_.enableStats(true);
+  w0->enableStats();
+  w1->enableStats();
+  w2->enableStats();
+  w3->enableStats();
+
+  testObj_.addWorker(w0);
+  testObj_.addWorker(w1);
+  testObj_.addWorker(w2);
+  testObj_.addWorker(w3);
+
+  testObj_.addNode(w0->getOutput());
+  testObj_.addNode(w3->getInput());
+
+  auto input = [&] {
+    switch (input_count) {
+      case 0:
+        std::this_thread::sleep_for(milliseconds(10));
+        CPPUNIT_ASSERT( testObj_.stateId() == fsm_state_t::Idle_s);
+        input_count++;
+        error_count = 500;
+        std::cout << "\ninput (10ms): " << 2 << std::endl;
+        return 2;
+
+      case 1:
+        std::this_thread::sleep_for(milliseconds(500));
+        CPPUNIT_ASSERT( testObj_.stateId() == fsm_state_t::Failure_s);
+        CPPUNIT_ASSERT( testObj_.getNThreads() == 0);
+        CPPUNIT_ASSERT( w0->status() == proc_status_t::OK_s);
+        CPPUNIT_ASSERT( w3->status() == proc_status_t::OK_s);
+
+        CPPUNIT_ASSERT( w0->getOutput()->getNActiveProducers() == 0);
+        CPPUNIT_ASSERT( w3->getInput()->getNActiveProducers() == 0);
+
+        CPPUNIT_ASSERT( (w1->status() == proc_status_t::Error_s && w2->status() == proc_status_t::OK_s) ||
+                        (w2->status() == proc_status_t::Error_s && w1->status() == proc_status_t::OK_s) );
+
+        CPPUNIT_ASSERT( w0->getOutput()->status() == proc_status_t::Error_s);
+        CPPUNIT_ASSERT( w1->getOutput()->status() == proc_status_t::Error_s);
+
+//         CPPUNIT_ASSERT( testObj_.getStats()[3].process_count_ == 400);
+
+        input_count++;
+        i_count = 0;
+        std::cout << "\ninput (8s): " << 4 << std::endl;
+        return 4;
+
+      case 2:
+        std::this_thread::sleep_for(milliseconds(600));
+        input_count++;
+        error_count = 0;
+        fatal_count = 600;
+        std::cout << "\ninput (10ms): " << 2 << std::endl;
+        return 2;
+
+      default:
+        std::this_thread::sleep_for(milliseconds(500));
+        CPPUNIT_ASSERT( testObj_.stateId() == fsm_state_t::FatalError_s);
+        CPPUNIT_ASSERT( testObj_.getNThreads() == 0);
+        CPPUNIT_ASSERT( w0->status() == proc_status_t::OK_s);
+        CPPUNIT_ASSERT( w1->status() == proc_status_t::OK_s);
+        CPPUNIT_ASSERT( w2->status() == proc_status_t::OK_s);
+        CPPUNIT_ASSERT( w3->status() == proc_status_t::FatalError_s);
+
+        CPPUNIT_ASSERT( w0->getOutput()->getNActiveProducers() == 0);
+        CPPUNIT_ASSERT( w1->getOutput()->getNActiveProducers() == 0);
+
+        CPPUNIT_ASSERT( w0->getOutput()->status() == proc_status_t::OK_s);
+        CPPUNIT_ASSERT( w3->getInput()->status() == proc_status_t::FatalError_s);
+
+        CPPUNIT_ASSERT( testObj_.getStats()[3].process_count_ == 500);
+        return 7;
+    }
+  };
+
+  testObj_.start(input);
+  CPPUNIT_ASSERT( testObj_.stateId() == fsm_state_t::FatalError_s);
+
+  testObj_.dismissWorkers();
+  testObj_.dismissNodes();
 }

@@ -34,6 +34,7 @@ struct WStats {
   int id_;
   int process_count_;
   double time_spent_;
+  void print();
 };
 
 ///////////////////// WInterface ////////////////////////////////////
@@ -55,7 +56,7 @@ public:
   void operator () (int n=0) {this->start(n);}
 
 //   void init(std::string s="");
-  void           init(std::string s, void *atg=nullptr);
+  void           init();
   proc_status_t  process();
   void           close();
 
@@ -65,8 +66,9 @@ public:
 
   void setStatus(proc_status_t s) {status_.store(s);}
 
+  PInterface* getProcessor() {return processor_;}
   int     getCount() const   {return processor_->getCount();}
-  void    enableStats()      {time_stats_enable_ = true;}
+  void    enableStats(bool e=true)      {time_stats_enable_ = e;}
   void    closeInput();
   WStats  getStats()   const;
   void    printStats() const;
@@ -93,16 +95,16 @@ public:
   WOutput();
   virtual ~WOutput();
 
-  std::shared_ptr< Fifo<outDataType*> >& getOutFifoPtr() {return fifo_out_;}
-  std::shared_ptr< Fifo<outDataType*> >& getOutput()     {return fifo_out_;}
+  std::shared_ptr< PtrFifo<outDataType*> >& getOutFifoPtr() {return fifo_out_;}
+  std::shared_ptr< PtrFifo<outDataType*> >& getOutput()     {return fifo_out_;}
 
-  void setOutFifoPtr(std::shared_ptr< Fifo<outDataType*> >& f);
+  void setOutFifoPtr(std::shared_ptr< PtrFifo<outDataType*> >& f);
 
 protected:
   void push_();
 
   outDataType **output_;
-  std::shared_ptr< Fifo<outDataType*> > fifo_out_;
+  std::shared_ptr< PtrFifo<outDataType*> > fifo_out_;
 };
 
 ///////////////////// WInput ///////////////////////////////////////
@@ -112,16 +114,16 @@ public:
   WInput();
   virtual ~WInput();
 
-  std::shared_ptr< Fifo<inDataType*> >&  getInFifoPtr()  {return fifo_in_;}
-  std::shared_ptr< Fifo<inDataType*> >&  getInput()      {return fifo_in_;}
+  std::shared_ptr< PtrFifo<inDataType*> >&  getInFifoPtr()  {return fifo_in_;}
+  std::shared_ptr< PtrFifo<inDataType*> >&  getInput()      {return fifo_in_;}
 
-  void setInFifoPtr(std::shared_ptr< Fifo<inDataType*> >& f);
+  void setInFifoPtr(std::shared_ptr< PtrFifo<inDataType*> >& f);
 
 protected:
   bool pull_();
 
   inDataType  **input_;
-  std::shared_ptr< Fifo<inDataType*> > fifo_in_;
+  std::shared_ptr< PtrFifo<inDataType*> > fifo_in_;
 };
 
 ///////////////////// InputWorker //////////////////////////////////

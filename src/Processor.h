@@ -43,7 +43,7 @@ public:
   virtual ~PInterface() {}
 
 //   virtual void init(std::string) =0;
-  virtual void init(std::string, void*) =0;
+  virtual void init() =0;
   virtual proc_status_t process() =0;
   virtual void close(proc_status_t st) =0;
 
@@ -51,8 +51,8 @@ public:
 
   std::string name() const {return name_;}
   int getCount()        const {return process_count_;}
-  void resetStats()   {process_count_ = 0, time_spent_ = 0;}
-  int getTime()         const {return time_spent_;}
+  void resetStats()   {process_count_ = 0, time_spent_ = 0.;}
+  double getTime()         const {return time_spent_;}
   void printTimeStats() const;
 
 protected:

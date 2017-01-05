@@ -30,7 +30,7 @@ class tproc_int : public InOutProcessor<int,int> {
   tproc_int() : InOutProcessor<int,int> ("testProcInt") {}
   ~tproc_int() {}
 
-  void init(std::string s, void *arg) {}
+  void init() {}
   proc_status_t process();
   void close(proc_status_t) {}
 };
@@ -40,7 +40,7 @@ class tproc_str : public InOutProcessor<int,std::string> {
   tproc_str() : InOutProcessor("testProcStr") {}
   ~tproc_str() {}
 
-  void init(std::string s, void *arg) {}
+  void init() {}
   proc_status_t process();
   void close(proc_status_t) {}
 };
@@ -50,12 +50,12 @@ class tout_int : public OutProcessor<int> {
   tout_int() : OutProcessor<int> ("testProcInt") {}
   ~tout_int() {}
 
-  void init(std::string s, void *arg) {}
+  void init() {}
   proc_status_t process() {return proc_status_t::OK_s;}
   void close(proc_status_t) {}
 };
 
-class TestProcessor  : public CppUnit::TestFixture {
+class TestProcessor : public CppUnit::TestFixture {
 
  public:
   void setUp();

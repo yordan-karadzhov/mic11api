@@ -17,7 +17,8 @@ void Idle::handleInput(Fsm *sm, fsm_input_t i) {
 
     case fsm_input_t::Start_i:
       sm->changeState(fsm_state_t::Standby_s);
-      sm->changeState(fsm_state_t::Active_s);
+      if (sm->stateId() == fsm_state_t::Standby_s)
+        sm->changeState(fsm_state_t::Active_s);
       break;
 
     case fsm_input_t::Stop_i:
@@ -30,7 +31,9 @@ void Idle::handleInput(Fsm *sm, fsm_input_t i) {
   }
 }
 
-void Idle::exit(Fsm* sm) {}
+void Idle::exit(Fsm* sm) {
+  this->whenLeavingStateDo(sm, fsm_state_t::Undefined_s);
+}
 
 void Active::handleInput(Fsm *sm, fsm_input_t i) {
   switch (i) {
@@ -40,7 +43,8 @@ void Active::handleInput(Fsm *sm, fsm_input_t i) {
 
     case fsm_input_t::Off_i:
       sm->changeState(fsm_state_t::Standby_s);
-      sm->changeState(fsm_state_t::Idle_s);
+      if (sm->stateId() == fsm_state_t::Standby_s)
+        sm->changeState(fsm_state_t::Idle_s);
       break;
 
     case fsm_input_t::Start_i:

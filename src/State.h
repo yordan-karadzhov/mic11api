@@ -70,7 +70,7 @@ public:
 
   virtual void whenEnteringStateDo(Fsm *sm, fsm_state_t old_state) override {
     for (auto &w: sm->getWorkers())
-      w->init("");
+      w->init();
   }
   virtual void whenSameStateDo(Fsm *sm) {}
   virtual void whenLeavingStateDo(Fsm *sm, fsm_state_t new_state) {}
@@ -93,6 +93,14 @@ public:
   virtual void whenSameStateDo(Fsm *sm) {}
   virtual void whenLeavingStateDo(Fsm *sm, fsm_state_t new_state) override {
     sm->stopWork();
+    if (new_state != fsm_state_t::Failure_s && new_state != fsm_state_t::FatalError_s) {
+      for (auto &n: sm->getNodes()) {
+        n->clear();
+        n->reset();
+      }
+    }
+
+    sm->updateStats();
     for (auto &w: sm->getWorkers())
       w->close();
   }
@@ -114,8 +122,10 @@ public:
     for (auto &w: sm->getWorkers())
       w->setStatus(proc_status_t::OK_s);
 
-    for (auto &n: sm->getNodes())
-      n->resetError();
+    for (auto &n: sm->getNodes()) {
+      n->clear();
+      n->reset();
+    }
   }
 };
 
@@ -127,11 +137,14 @@ public:
 
   void handleInput(Fsm *sm, fsm_input_t i);
   void exit(Fsm* sm);
-  fsm_state_t id() {return fsm_state_t::Failure_s;}
+  fsm_state_t id() {return fsm_state_t::FatalError_s;}
 
   virtual void whenEnteringStateDo(Fsm *sm, fsm_state_t old_state) {}
   virtual void whenSameStateDo(Fsm *sm) {}
-  virtual void whenLeavingStateDo(Fsm *sm, fsm_state_t new_state) {}
+  virtual void whenLeavingStateDo(Fsm *sm, fsm_state_t new_state) {
+    for (auto &n: sm->getNodes())
+      n->clear();
+  }
 };
 
 #endif

@@ -29,13 +29,13 @@ typedef std::chrono::high_resolution_clock::time_point  hd_time;
 #define DUMMY bool
 
 #define STREAM_DOWN(dataType) \
-void operator>> (std::shared_ptr< Fifo<dataType*> > &fifo) \
+void operator>> (std::shared_ptr< PtrFifo<dataType*> > &fifo) \
 { fifo = this->getOutFifoPtr(); fifo->addConsummer();}
 
 
 
 #define STREAM_UP(dataType) \
-void  operator<< (std::shared_ptr< Fifo<dataType*> > &fifo_out) \
+void  operator<< (std::shared_ptr< PtrFifo<dataType*> > &fifo_out) \
 { this->setOutFifoPtr(fifo_out);}
 
 

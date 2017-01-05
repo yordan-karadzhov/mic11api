@@ -58,6 +58,34 @@ public:
   void whenLeavingStateDo(Fsm *sm, fsm_state_t new_state) override {}
 };
 
+class t5_input : public InProcessor<int> {
+ public:
+  t5_input(): InProcessor("t5_input") {}
+  void init() override {}
+  proc_status_t process() override;
+  void close(proc_status_t st) override {}
+};
+
+class t5_proc : public InProcessor<int> {
+ public:
+  t5_proc() : InProcessor("t5_proc") {}
+  void init() override {}
+  proc_status_t process() override;
+  void close(proc_status_t st) override {}
+};
+
+class t5_output : public OutProcessor<int> {
+ public:
+  t5_output() : OutProcessor("t5_output") {}
+  void init() override {}
+  proc_status_t process() override;
+  void close(proc_status_t st) override {}
+};
+
+
+IMPLEMENT_INPUT(t5_input_worker, int, t5_input)   // worker name, data type, proce name
+IMPLEMENT_UWORKER(t5_proc_worker, int, t5_proc)
+IMPLEMENT_OUTPUT(t5_output_worker, int, t5_output)
 
 class TestFsm : public CppUnit::TestFixture {
 
@@ -76,6 +104,10 @@ class TestFsm : public CppUnit::TestFixture {
 
  private:
   Fsm testObj_;
+
+  t5_input_worker  *w0;
+  t5_proc_worker   *w1, *w2;
+  t5_output_worker *w3;
 
   CPPUNIT_TEST_SUITE( TestFsm );
   CPPUNIT_TEST( TestGetWorkers );

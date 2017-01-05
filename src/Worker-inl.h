@@ -17,7 +17,7 @@
 ///////////////////// WOutput /////////////////////////////////
 template <class outDataType>
 WOutput<outDataType>::WOutput()
-: output_(new outDataType*), fifo_out_(new Fifo<outDataType*> (FIFO_MAX_SIZE)) {
+: output_(new outDataType*), fifo_out_(new PtrFifo<outDataType*> (FIFO_MAX_SIZE)) {
   *output_ = nullptr;
   fifo_out_->addProducer();
 }
@@ -34,7 +34,7 @@ WOutput<outDataType>::~WOutput() {
 }
 
 template <class outDataType>
-void WOutput<outDataType>::setOutFifoPtr(std::shared_ptr< Fifo<outDataType*> >& f) {
+void WOutput<outDataType>::setOutFifoPtr(std::shared_ptr< PtrFifo<outDataType*> >& f) {
   fifo_out_ = f;
   fifo_out_->addProducer();
 }
@@ -47,7 +47,7 @@ void WOutput<outDataType>::push_() {
 ///////////////////// WInput /////////////////////////////////////
 template <class inDataType>
 WInput<inDataType>::WInput()
-: input_(new inDataType*), fifo_in_(new Fifo<inDataType*> (FIFO_MAX_SIZE)) {
+: input_(new inDataType*), fifo_in_(new PtrFifo<inDataType*> (FIFO_MAX_SIZE)) {
   *input_ = nullptr;
   fifo_in_->addConsummer();
 }
@@ -64,7 +64,7 @@ WInput<inDataType>::~WInput() {
 }
 
 template <class inDataType>
-void WInput<inDataType>::setInFifoPtr(std::shared_ptr< Fifo<inDataType*> >& f) {
+void WInput<inDataType>::setInFifoPtr(std::shared_ptr< PtrFifo<inDataType*> >& f) {
   fifo_in_ = f;
   fifo_in_->addConsummer();
 }
@@ -82,11 +82,13 @@ bool WInput<inDataType>::pull_() {
 ///////////////////// InputWorker /////////////////////////
 template <class outDataType>
 void InputWorker<outDataType>::push() {
+//   std::cout << "\n" << this->name() << " (id " << this->id() <<  "): push.\n";
   this->push_();
 }
 
 template <class outDataType>
 bool InputWorker<outDataType>::pull() {
+//   std::cout << "\n" << this->name() << " (id " << this->id() <<  "): pull.\n";
   if (input_closed_)
     return false;
 
@@ -103,17 +105,20 @@ void InputWorker<outDataType>::stop() {
 ///////////////////// OutputWorker /////////////////////////
 template <class inDataType>
 bool OutputWorker<inDataType>::pull() {
+//   std::cout << "\n" << this->name() << " (id " << this->id() <<  "): pull.\n";
   return this->pull_();
 }
 
 template <class inDataType>
 void OutputWorker<inDataType>::push() {
+//   std::cout << "\n" << this->name() << " (id " << this->id() <<  "): push.\n";
   delete *(WInput<inDataType>::input_);
 
 }
 
 template <class inDataType>
 void OutputWorker<inDataType>::stop() {
+  *WInput<inDataType>::input_ = nullptr;
   if (status_ == proc_status_t::Error_s || status_ == proc_status_t::FatalError_s)
     WInput<inDataType>::fifo_in_->consummerError(status_);
   this->printGooodBy();
@@ -122,11 +127,13 @@ void OutputWorker<inDataType>::stop() {
 /////////////////// UpdateWorker /////////////////////////////////////
 template <class dataType>
 void UpdateWorker<dataType>::push() {
+//   std::cout << "\n" << this->name() << " (id " << this->id() <<  "): push.\n";
   this->push_();
 }
 
 template <class dataType>
 bool UpdateWorker<dataType>::pull() {
+//   std::cout << "\n" << this->name() << " (id " << this->id() <<  "): pull.\n";
   return this->pull_();
 }
 
@@ -155,6 +162,7 @@ bool TransformWorker<inDataType, outDataType>::pull() {
 
 template <class inDataType, class outDataType>
 void TransformWorker<inDataType, outDataType>::stop() {
+  *WInput<inDataType>::input_ = nullptr;
   if (status_ == proc_status_t::Error_s || status_ == proc_status_t::FatalError_s)
     WInput<inDataType>::fifo_in_->consummerError(status_);
 
