@@ -1,16 +1,18 @@
 message(STATUS "src ...")
 
-
 # get list of all source files in this directory.
 AUX_SOURCE_DIRECTORY(.              MIC11API_SOURCE_FILES)
 
 ############### build the library #####################
 
-#set(CMAKE_CXX_FLAGS)
-add_library (mic11api   SHARED     ${MIC11API_SOURCE_FILES})
+if (_STATIC)
 
-if (ROOT_FOUND)
+  MESSAGE(STATUS "building static library\n")
+  add_library(mic11api        ${MIC11API_SOURCE_FILES})
 
-  target_link_libraries(mic11api     ${ROOT_LIBRARIES} )
+else (_STATIC)
 
-endif (ROOT_FOUND)
+  MESSAGE(STATUS "building shered library\n")
+  add_library(mic11api SHARED ${MIC11API_SOURCE_FILES})
+
+endif()

@@ -64,6 +64,7 @@ public:
 
   template<typename T>
   void start(T input_func, int n=0);
+//   void start1(Fifo<int> *inputs, int n=0);
 
   template<typename workerType>
   workerType* addWorker();
@@ -144,7 +145,7 @@ void Fsm::start(T input_func, int n) {
 
       const fsm_input_t input = static_cast<fsm_input_t>(choice);
       this->handleInput(input);
-      user_input_ = async(std::launch::async, input_func);
+      user_input_ = std::async(std::launch::async, input_func);
     }
 
     this->handleMonitor();

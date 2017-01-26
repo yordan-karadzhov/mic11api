@@ -104,6 +104,15 @@ Fsm::~Fsm() {
   this->dismissWorkers();
 }
 
+// void Fsm::start1(Fifo<int> *inputs, int n) {
+//   auto input = [&] {
+//     int xInput = inputs->pop();
+//     return xInput;
+//   };
+// 
+//   this->start(input, n);
+// }
+
 int Fsm::addWorker(WInterface* w) {
   workers_.push_back(w);
   dynamic_workers_.push_back(false);
@@ -111,7 +120,7 @@ int Fsm::addWorker(WInterface* w) {
 }
 
 void Fsm::dismissWorkers() {
-  for (unsigned int i=0; i< workers_.size(); ++i)
+  for (unsigned int i=0; i<workers_.size(); ++i)
     if(dynamic_workers_[i])
       delete workers_[i];
 

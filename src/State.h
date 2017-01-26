@@ -27,8 +27,7 @@
 #include "Fsm.h"
 // class Fsm;
 
-class State {
-public:
+struct State {
   State() {}
   virtual ~State() {}
 
@@ -44,8 +43,7 @@ public:
 };
 
 
-class Idle: public State {
-public:
+struct Idle: public State {
   Idle() {}
   virtual ~Idle() {}
 
@@ -53,13 +51,14 @@ public:
   void exit(Fsm* sm);
   fsm_state_t id() {return fsm_state_t::Idle_s;}
 
+  // To be redeffined by the user.
   virtual void whenEnteringStateDo(Fsm *sm, fsm_state_t old_state) {}
   virtual void whenSameStateDo(Fsm *sm) {}
   virtual void whenLeavingStateDo(Fsm *sm, fsm_state_t new_state) {}
 };
 
 
-class Standby : public State {
+struct Standby : public State {
 public:
   Standby() {}
   virtual ~Standby() {}
@@ -68,6 +67,7 @@ public:
   void exit(Fsm* sm);
   fsm_state_t id() {return fsm_state_t::Standby_s;}
 
+  // To be redeffined by the user.
   virtual void whenEnteringStateDo(Fsm *sm, fsm_state_t old_state) override {
     for (auto &w: sm->getWorkers())
       w->init();
@@ -77,8 +77,7 @@ public:
 };
 
 
-class Active: public State {
-public:
+struct Active: public State {
   Active() {}
   virtual ~Active() {}
 
@@ -86,6 +85,7 @@ public:
   void exit(Fsm* sm);
   fsm_state_t id() {return fsm_state_t::Active_s;}
 
+  // To be redeffined by the user.
   virtual void whenEnteringStateDo(Fsm *sm, fsm_state_t old_state) override {
     sm->startWork();
   }
@@ -107,8 +107,7 @@ public:
 };
 
 
-class Failure : public State {
-public:
+struct Failure : public State {
   Failure() {}
   virtual ~Failure() {}
 
@@ -116,6 +115,7 @@ public:
   void exit(Fsm* sm);
   fsm_state_t id() {return fsm_state_t::Failure_s;}
 
+  // To be redeffined by the user.
   virtual void whenEnteringStateDo(Fsm *sm, fsm_state_t old_state) {}
   virtual void whenSameStateDo(Fsm *sm) {}
   virtual void whenLeavingStateDo(Fsm *sm, fsm_state_t new_state) override {
@@ -130,8 +130,7 @@ public:
 };
 
 
-class FatalError : public State {
-public:
+struct FatalError : public State {
   FatalError() {}
   virtual ~FatalError() {}
 
@@ -139,6 +138,7 @@ public:
   void exit(Fsm* sm);
   fsm_state_t id() {return fsm_state_t::FatalError_s;}
 
+  // To be redeffined by the user.
   virtual void whenEnteringStateDo(Fsm *sm, fsm_state_t old_state) {}
   virtual void whenSameStateDo(Fsm *sm) {}
   virtual void whenLeavingStateDo(Fsm *sm, fsm_state_t new_state) {

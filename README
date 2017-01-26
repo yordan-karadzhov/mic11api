@@ -1,11 +1,15 @@
-To build the code do
+About:
+------------------------------------------------------------
+Mic11Api
 
-Option 1:
 
+Install:
+------------------------------------------------------------
+To build the code do:
+Option 1
   cd build
   cmake ../src/
   make
 
-Option 2:
-
+Option 2
   source build_and_test.sh

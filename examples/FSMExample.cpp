@@ -198,6 +198,31 @@ int main(int argc, char* argv[]) {
 
   fsm.enableStats();
 
+/*
+  Fifo<int> in_fifo(6);
+
+  auto myInput = [&] {
+    sleep(2);
+    in_fifo.push(1);
+    sleep(1);
+    in_fifo.push(2);
+    sleep(2);
+    in_fifo.push(3);
+    sleep(1);
+    in_fifo.push(2);
+    sleep(4);
+    in_fifo.push(4);
+    sleep(2);
+    in_fifo.push(7);
+  };
+
+  thread t(myInput);
+
+  fsm.start1(&in_fifo);
+
+  t.join();
+*/
+
   auto myInput = [] {
     this_thread::sleep_for(milliseconds(10));
     int choice;
@@ -207,8 +232,8 @@ int main(int argc, char* argv[]) {
     return choice;
   };
 
-//   fsm.start(myInput);
-  fsm.start(myInput, 500);
+  fsm.start(myInput);
+//   fsm.start(myInput, 500);
 
   return 0;
 }
