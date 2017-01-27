@@ -28,11 +28,11 @@ echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ../bin/unit_test
 
 if [ $? -eq 0 ]; then
-  export $MIC11_INSTALL=OK
+  export MIC11_INSTALL=OK
   echo "All tests OK."
   echo
 else
-  export $MIC11_INSTALL=ERROR
+  export MIC11_INSTALL=ERROR
   echo "Failed unit tests. Aborting"
   echo
 
