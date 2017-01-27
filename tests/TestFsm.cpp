@@ -420,7 +420,7 @@ void TestFsm::TestStop() {
 
 //         std::cout << i_count << " &&& " << o_count << std::endl;
 //         CPPUNIT_ASSERT( i_count == 1000);
-        CPPUNIT_ASSERT( testObj_.getStats()[3].process_count_ == 700);
+        CPPUNIT_ASSERT( abs( testObj_.getStats()[3].process_count_ - 700 ) <= 1 );
 
         input_count++;
 
@@ -546,7 +546,7 @@ void TestFsm::TestError() {
         CPPUNIT_ASSERT( w0->getOutput()->status() == proc_status_t::OK_s);
         CPPUNIT_ASSERT( w3->getInput()->status() == proc_status_t::FatalError_s);
 
-        CPPUNIT_ASSERT( testObj_.getStats()[3].process_count_ == 500);
+        CPPUNIT_ASSERT( abs( testObj_.getStats()[3].process_count_ - 500 ) <= 1);
         return 7;
     }
   };
