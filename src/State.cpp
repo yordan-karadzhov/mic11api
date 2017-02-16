@@ -33,6 +33,7 @@ void Idle::handleInput(Fsm *sm, fsm_input_t i) {
 
 void Idle::exit(Fsm* sm) {
   this->whenLeavingStateDo(sm, fsm_state_t::Undefined_s);
+  sm->dismissWorkers();
 }
 
 void Active::handleInput(Fsm *sm, fsm_input_t i) {
@@ -121,6 +122,7 @@ void FatalError::handleInput(Fsm *sm, fsm_input_t i) {
     default:
       std::cout << " FatalError - exit\n";
       this->whenLeavingStateDo(sm, fsm_state_t::Undefined_s);
+      sm->dismissWorkers();
       std::exit(EXIT_FAILURE);
   }
 }

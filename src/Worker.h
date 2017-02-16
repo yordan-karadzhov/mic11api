@@ -203,7 +203,6 @@ protected:
   bool pull() final;
   void push() final;
   void stop() final;
-
 };
 
 #include "Worker-inl.h"
